@@ -1,3 +1,7 @@
+use std::collections::HashSet;
+use egui_extras::{TableBuilder,Table,Column};
+use egui::RichText;
+
 #[derive(Debug)]
 pub struct CueballApp {
     state: AppState,
@@ -116,98 +120,34 @@ impl eframe::App for CueballApp {
 
         // central panel
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.heading("Cueball");
-
             cue_list_ui(ui, &mut self.state.project);
         });
     }
 }
 
-fn cue_list_ui(ui: &mut egui::Ui, project: &mut Project) -> () {
-    const ROW_HEIGHT: f32 = 24.;
-
-    egui::ScrollArea::vertical().show(ui, |ui| {
-        // header
-        //ui.horizontal(|ui| {
-        //    // cue id column
-        //    ui.horizontal(|ui| {
-        //        ui.set_width(16.);
-        //        ui.label("Cue #");
-        //    });
-        //
-        //    ui.separator();
-        //
-        //    ui.label("Cue");
-        //});
-
-        for cue in &project.cues.list {
-            ui.horizontal(|ui| {
-                ui.set_height(ROW_HEIGHT);
-
-                // cue number
-                ui.horizontal(|ui| {
-                    ui.set_width(16.);
-
-                    ui.label(cue.id.to_string());
+fn cue_list_ui(ui: &mut egui::Ui, project: &Project) -> () {
+    let scroll_height = ui.available_height();
+    TableBuilder::new(ui)
+        .striped(true)
+        .resizable(true)
+        .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
+        .min_scrolled_height(0.0)
+        .max_scroll_height(scroll_height)
+        .column(Column::auto())
+        .column(Column::auto())
+        .column(Column::remainder())
+        .header(20.0, |mut header| {
+            header.col(|ui| {ui.label(RichText::new("Q"));});
+            header.col(|ui| {ui.strong("Type");});
+            header.col(|ui| {ui.strong("Name");});
+        })
+        .body(|mut body| {
+            for cue in &project.cues.list {
+                body.row(18.0, |mut row| {
+                    row.col(|ui| {ui.label("TBD");});
+                    row.col(|ui| {ui.label("TBD");});
+                    row.col(|ui| {ui.label(cue.name.clone());});
                 });
-
-                ui.separator();
-
-                // cue body
-                ui.horizontal(|ui| {
-                    let mut selected_cue = project.selected_cue;
-                    cue_body_ui(ui, cue, &mut selected_cue);
-                    project.selected_cue = selected_cue;
-                });
-            });
-
-            ui.separator();
-        }
-    });
-
-    //ui.horizontal(|ui| {
-    //    // cue id column
-    //    ui.vertical(|ui| {
-    //        ui.set_width(16.);
-    //
-    //        for cue in &project.cues.list {
-    //            ui.horizontal(|ui| {
-    //                ui.set_height(ROW_HEIGHT);
-    //
-    //                ui.label(cue.id.to_string());
-    //            });
-    //            ui.separator();
-    //        }
-    //    });
-    //
-    //    ui.separator();
-    //
-    //    // cue column
-    //    ui.vertical(|ui| {
-    //        for cue in &project.cues.list {
-    //            ui.horizontal(|ui| {
-    //                ui.set_height(ROW_HEIGHT);
-    //
-    //                let mut selected_cue: Option<u64> = project.selected_cue;
-    //                cue_body_ui(ui, cue, &mut selected_cue);
-    //                project.selected_cue = selected_cue;
-    //            });
-    //            ui.separator();
-    //        }
-    //    });
-    //});
-}
-
-fn cue_body_ui(ui: &mut egui::Ui, cue: &Cue, selected_cue: &mut Option<u64>) {
-    match &cue.cue_type {
-        CueType::Message(_msg) => {
-            // wip icon
-            ui.label("(M)");
-        }
-        CueType::Process => {
-            // wip icon
-            ui.label("(P)");
-        }
-    };
-    ui.selectable_value(selected_cue, Some(cue.id), cue.name.clone());
+            }
+        });
 }
