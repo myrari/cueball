@@ -105,14 +105,12 @@ impl eframe::App for CueballApp {
             egui::menu::bar(ui, |ui| {
                 // file menu and spacer
                 ui.menu_button("File", |ui| {
+                    // theme widget
+                    egui::widgets::global_theme_preference_buttons(ui);
                     if ui.button("Quit").clicked() {
                         ctx.send_viewport_cmd(egui::ViewportCommand::Close);
                     }
                 });
-                ui.add_space(16.0);
-
-                // theme widget
-                egui::widgets::global_theme_preference_buttons(ui);
             });
         });
 
