@@ -33,7 +33,7 @@ pub struct Project {
 
     pub cues: CueList,
 
-    //selected_cue: Option<u64>,
+    selected_cue: Option<usize>,
     inspector_panel: InspectorPanel,
 }
 
@@ -61,7 +61,7 @@ impl Default for Project {
         Self {
             name: String::from("untitled.cueball"),
             cues: CueList::new(),
-            //selected_cue: None,
+            selected_cue: None,
             inspector_panel: InspectorPanel::default(),
         }
     }
@@ -142,7 +142,7 @@ fn inspector_panel_body(ui: &mut egui::Ui, project: &Project) {
     });
 }
 
-fn cue_list_ui(ui: &mut egui::Ui, project: &Project) {
+fn cue_list_ui(ui: &mut egui::Ui, project: &mut Project) {
     let scroll_height = ui.available_height();
     TableBuilder::new(ui)
         .striped(true)
@@ -153,6 +153,7 @@ fn cue_list_ui(ui: &mut egui::Ui, project: &Project) {
         .column(Column::auto())
         .column(Column::auto())
         .column(Column::remainder())
+        .sense(egui::Sense::click())
         .header(20.0, |mut header| {
             header.col(|ui| {
                 ui.label(RichText::new("Q"));
@@ -164,24 +165,29 @@ fn cue_list_ui(ui: &mut egui::Ui, project: &Project) {
                 ui.strong("Name");
             });
         })
-        .body(|mut body| {
-            for cue in &project.cues.list {
-                body.row(18.0, |mut row| {
-                    cue_row_ui(&mut row, cue);
+        .body(|body| {
+            body.rows(18.0, project.cues.list.len(), |mut row| {
+                let i = row.index();
+                let this_selected = Some(i) == project.selected_cue;
+                let cue = &project.cues.list[i];
+                row.set_selected(this_selected);
+                row.col(|ui| {
+                    ui.label(RichText::new(cue.get_id())
+                        .text_style(egui::TextStyle::Monospace));
                 });
-            }
+                row.col(|ui| {
+                    ui.label(cue.type_str_short());
+                });
+                row.col(|ui| {
+                    ui.label(cue.get_name());
+                });
+                if row.response().clicked() {
+                    if this_selected {
+                        project.selected_cue = None
+                    } else {
+                        project.selected_cue = Some(i)
+                    }
+                }
+            });
         });
-}
-
-fn cue_row_ui(row: &mut TableRow, cue: &Box<dyn Cue>) {
-    row.col(|ui| {
-        ui.label(RichText::new(cue.get_id())
-            .text_style(egui::TextStyle::Monospace));
-    });
-    row.col(|ui| {
-        ui.label(cue.type_str_short());
-    });
-    row.col(|ui| {
-        ui.label(cue.get_name());
-    });
 }
