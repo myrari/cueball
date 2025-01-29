@@ -1,5 +1,7 @@
+//use std::collections::HashSet;
+use egui_extras::{TableBuilder,TableRow,Column};
 use egui::RichText;
-use egui_extras::{Column, TableBuilder, TableRow};
+use crate::data::{Cue, CueList};
 
 #[derive(Debug)]
 pub struct CueballApp {
@@ -44,60 +46,11 @@ pub struct Project {
 impl Default for Project {
     fn default() -> Self {
         Self {
-            name: String::from("Untitled.cpb"),
+            name: String::from("untitled.cueball"),
             cues: CueList::new(),
             selected_cue: None,
         }
     }
-}
-
-#[derive(Debug)]
-pub struct CueList {
-    list: Vec<Cue>,
-}
-
-impl CueList {
-    pub fn new() -> Self {
-        Self { list: vec![] }
-    }
-
-    pub fn add(&mut self, cue_type: CueType) {
-        let cue = Cue {
-            id: self.get_new_cue_id(),
-            name: match &cue_type {
-                CueType::Message(msg) => msg.clone(),
-                CueType::Process => String::from("Process cue"),
-            },
-            cue_type,
-        };
-        self.list.push(cue);
-    }
-
-    fn get_new_cue_id(&self) -> u64 {
-        let mut largest_id = 0;
-
-        for cue in &self.list {
-            if cue.id > largest_id {
-                largest_id = cue.id;
-            }
-        }
-
-        largest_id + 1
-    }
-}
-
-#[derive(Debug)]
-struct Cue {
-    id: u64,
-    name: String,
-
-    cue_type: CueType,
-}
-
-#[derive(Debug)]
-pub enum CueType {
-    Message(String),
-    Process,
 }
 
 impl eframe::App for CueballApp {
