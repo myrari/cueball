@@ -1,7 +1,7 @@
 //use std::collections::HashSet;
-use egui_extras::{TableBuilder,TableRow,Column};
-use egui::RichText;
 use crate::data::{Cue, CueList};
+use egui::RichText;
+use egui_extras::{Column, TableBuilder, TableRow};
 
 #[derive(Debug)]
 pub struct CueballApp {
@@ -12,11 +12,7 @@ impl Default for CueballApp {
     fn default() -> Self {
         CueballApp {
             state: AppState {
-                project: Project {
-                    name: String::from("Untitled.cbp"),
-                    cues: CueList::new(),
-                    selected_cue: None,
-                },
+                project: Project::default(),
             },
         }
     }
@@ -40,7 +36,27 @@ pub struct Project {
 
     pub cues: CueList,
 
-    selected_cue: Option<u64>,
+    //selected_cue: Option<u64>,
+    inspector_panel: InspectorPanel,
+}
+
+#[derive(Debug)]
+struct InspectorPanel {
+    selected_tab: InspectorPanelTabs,
+}
+
+impl Default for InspectorPanel {
+    fn default() -> Self {
+        Self {
+            selected_tab: InspectorPanelTabs::Basics,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+enum InspectorPanelTabs {
+    Basics,
+    TimeLoops,
 }
 
 impl Default for Project {
@@ -48,7 +64,8 @@ impl Default for Project {
         Self {
             name: String::from("untitled.cueball"),
             cues: CueList::new(),
-            selected_cue: None,
+            //selected_cue: None,
+            inspector_panel: InspectorPanel::default(),
         }
     }
 }
@@ -78,16 +95,22 @@ impl eframe::App for CueballApp {
                     ui.horizontal(|ui| {
                         ui.set_height(16.);
 
-                        ui.label("tab ribbon");
+                        // add buttons for each tab
+                        ui.selectable_value(
+                            &mut self.state.project.inspector_panel.selected_tab,
+                            InspectorPanelTabs::Basics,
+                            "Basics",
+                        );
+                        ui.selectable_value(
+                            &mut self.state.project.inspector_panel.selected_tab,
+                            InspectorPanelTabs::TimeLoops,
+                            "Time & Loops",
+                        );
                     });
 
                     // main body
                     egui::ScrollArea::vertical().show(ui, |ui| {
-                        ui.horizontal(|ui| {
-                            ui.set_max_height(200.);
-
-                            ui.label("main body");
-                        });
+                        inspector_panel_body(ui, &self.state.project);
                     });
                 });
             });
@@ -99,7 +122,30 @@ impl eframe::App for CueballApp {
     }
 }
 
-fn cue_list_ui(ui: &mut egui::Ui, project: &Project) -> () {
+fn inspector_panel_body(ui: &mut egui::Ui, project: &Project) {
+    ui.horizontal(|ui| {
+        ui.set_max_height(200.);
+        ui.set_width(ui.available_width());
+
+        match project.inspector_panel.selected_tab {
+            InspectorPanelTabs::Basics => {
+                // first column
+                ui.vertical(|ui| {
+                    // cue number
+                    ui.horizontal(|ui| {
+                        ui.label("Number:");
+                        // put in editable cue number once cues are reworked
+                    });
+                });
+            }
+            InspectorPanelTabs::TimeLoops => {
+                ui.label("time & loops lol");
+            }
+        };
+    });
+}
+
+fn cue_list_ui(ui: &mut egui::Ui, project: &Project) {
     let scroll_height = ui.available_height();
     TableBuilder::new(ui)
         .striped(true)
