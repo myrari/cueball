@@ -1,6 +1,5 @@
-use std::collections::HashSet;
-use egui_extras::{TableBuilder,Table,TableRow,Column};
 use egui::RichText;
+use egui_extras::{Column, TableBuilder, TableRow};
 
 #[derive(Debug)]
 pub struct CueballApp {
@@ -137,9 +136,15 @@ fn cue_list_ui(ui: &mut egui::Ui, project: &Project) -> () {
         .column(Column::auto())
         .column(Column::remainder())
         .header(20.0, |mut header| {
-            header.col(|ui| {ui.label(RichText::new("Q"));});
-            header.col(|ui| {ui.strong("Type");});
-            header.col(|ui| {ui.strong("Name");});
+            header.col(|ui| {
+                ui.label(RichText::new("Q"));
+            });
+            header.col(|ui| {
+                ui.strong("Type");
+            });
+            header.col(|ui| {
+                ui.strong("Name");
+            });
         })
         .body(|mut body| {
             for cue in &project.cues.list {
@@ -151,7 +156,13 @@ fn cue_list_ui(ui: &mut egui::Ui, project: &Project) -> () {
 }
 
 fn cue_row_ui(row: &mut TableRow, cue: &Cue) {
-    row.col(|ui| {ui.label(RichText::new(format!("{}", cue.id)).text_style(egui::TextStyle::Monospace));});
-    row.col(|ui| {ui.label("TBD");});
-    row.col(|ui| {ui.label(cue.name.clone());});
+    row.col(|ui| {
+        ui.label(RichText::new(format!("{}", cue.id)).text_style(egui::TextStyle::Monospace));
+    });
+    row.col(|ui| {
+        ui.label("TBD");
+    });
+    row.col(|ui| {
+        ui.label(cue.name.clone());
+    });
 }
