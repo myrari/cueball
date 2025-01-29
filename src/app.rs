@@ -1,4 +1,3 @@
-//use std::collections::HashSet;
 use crate::data::{Cue, CueList, CueTimed};
 use egui::RichText;
 use egui_extras::{Column, TableBuilder, TableRow};
@@ -169,7 +168,7 @@ fn cue_list_ui(ui: &mut egui::Ui, project: &mut Project) {
         .sense(egui::Sense::click())
         .header(20.0, |mut header| {
             header.col(|ui| {
-                ui.label(RichText::new("Q"));
+                ui.strong("Q");
             });
             header.col(|ui| {
                 ui.strong("Type");
