@@ -1,5 +1,5 @@
 use std::collections::HashSet;
-use egui_extras::{TableBuilder,Table,Column};
+use egui_extras::{TableBuilder,Table,TableRow,Column};
 use egui::RichText;
 
 #[derive(Debug)]
@@ -144,10 +144,14 @@ fn cue_list_ui(ui: &mut egui::Ui, project: &Project) -> () {
         .body(|mut body| {
             for cue in &project.cues.list {
                 body.row(18.0, |mut row| {
-                    row.col(|ui| {ui.label("TBD");});
-                    row.col(|ui| {ui.label("TBD");});
-                    row.col(|ui| {ui.label(cue.name.clone());});
+                    cue_row_ui(&mut row, cue);
                 });
             }
         });
+}
+
+fn cue_row_ui(row: &mut TableRow, cue: &Cue) {
+    row.col(|ui| {ui.label(RichText::new(format!("{}", cue.id)).text_style(egui::TextStyle::Monospace));});
+    row.col(|ui| {ui.label("TBD");});
+    row.col(|ui| {ui.label(cue.name.clone());});
 }
