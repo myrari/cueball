@@ -175,12 +175,13 @@ fn cue_list_ui(ui: &mut egui::Ui, project: &Project) {
 
 fn cue_row_ui(row: &mut TableRow, cue: &Box<dyn Cue>) {
     row.col(|ui| {
-        ui.label(RichText::new(cue.id()).text_style(egui::TextStyle::Monospace));
+        ui.label(RichText::new(cue.get_id())
+            .text_style(egui::TextStyle::Monospace));
     });
     row.col(|ui| {
-        ui.label(cue.type_str_short().clone());
+        ui.label(cue.type_str_short());
     });
     row.col(|ui| {
-        ui.label(cue.name().unwrap_or("unnamed cue".to_string()).clone());
+        ui.label(cue.get_name());
     });
 }

@@ -10,11 +10,11 @@ impl CueList {
         Self { list: vec![] }
     }
 
-    fn get_new_cue_id(&self) -> u64 {
+    pub fn get_new_cue_id(&self) -> u64 {
         let mut largest_id = 0;
 
         for cue in &self.list {
-            largest_id = max(cue.id_num().unwrap_or(0), largest_id);
+            largest_id = max(cue.get_id_num().unwrap_or(0), largest_id);
         }
 
         largest_id + 1
@@ -22,13 +22,15 @@ impl CueList {
 }
 
 pub trait Cue {
-    fn id(&self)                    -> String;
-    fn id_num(&self)                -> Option<u64> {
-        self.id().parse::<u64>().ok()
+    fn get_id(&self)                       -> String;
+    fn set_id(&mut self, new_id: &str)         -> ();
+    fn get_id_num(&self)                   -> Option<u64> {
+        self.get_id().parse::<u64>().ok()
     }
-    fn type_str_full(&self)         -> String;
-    fn type_str_short(&self)        -> String;
-    fn name(&self)                  -> Option<String>;
+    fn get_name(&self)                     -> String;
+    fn set_name(&mut self, new_name: &str) -> ();
+    fn type_str_full(&self)                -> String;
+    fn type_str_short(&self)               -> String;
 }
 
 pub trait CueRunnable: Cue {
