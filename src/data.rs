@@ -29,7 +29,9 @@ pub trait Cue {
     fn type_str_full(&self)         -> String;
     fn type_str_short(&self)        -> String;
     fn name(&self)                  -> Option<String>;
+}
 
+pub trait CueRunnable: Cue {
     fn is_enabled(&self)            -> bool;
     fn set_enabled(&self, to: bool) -> ();
     fn is_armed(&self)              -> bool;
@@ -50,4 +52,15 @@ pub enum CueRunning {
     Running,
     Paused,
     Stopped
+}
+
+// Possibly change time representation later.
+// For now this is a float of seconds.
+pub type CueTime = f64;
+
+pub trait CueTimed: CueRunnable {
+    fn bounded()   -> bool;
+    fn length()    -> Option<CueTime>;
+    fn elapsed()   -> Option<CueTime>;
+    fn remaining() -> Option<CueTime>;
 }
