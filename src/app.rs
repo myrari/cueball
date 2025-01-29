@@ -6,6 +6,27 @@ pub struct CueballApp {
     state: AppState,
 }
 
+impl Default for CueballApp {
+    fn default() -> Self {
+        CueballApp {
+            state: AppState {
+                project: Project {
+                    name: String::from("Untitled.cbp"),
+                    cues: CueList::new(),
+                    selected_cue: None,
+                },
+            },
+        }
+    }
+}
+
+impl CueballApp {
+    pub fn new(_cc: &eframe::CreationContext<'_>, state: AppState) -> Self {
+        // do nothing here for now
+        Self { state }
+    }
+}
+
 #[derive(Debug)]
 pub struct AppState {
     pub project: Project,
@@ -79,27 +100,6 @@ pub enum CueType {
     Process,
 }
 
-impl Default for CueballApp {
-    fn default() -> Self {
-        CueballApp {
-            state: AppState {
-                project: Project {
-                    name: String::from("Untitled.cbp"),
-                    cues: CueList::new(),
-                    selected_cue: None,
-                },
-            },
-        }
-    }
-}
-
-impl CueballApp {
-    pub fn new(_cc: &eframe::CreationContext<'_>, state: AppState) -> Self {
-        // do nothing here for now
-        Self { state }
-    }
-}
-
 impl eframe::App for CueballApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // top bar
@@ -116,6 +116,28 @@ impl eframe::App for CueballApp {
                 });
             });
         });
+
+        egui::TopBottomPanel::bottom("inspector_panel")
+            .resizable(true)
+            .show(ctx, |ui| {
+                ui.vertical(|ui| {
+                    // tab ribbon
+                    ui.horizontal(|ui| {
+                        ui.set_height(16.);
+
+                        ui.label("tab ribbon");
+                    });
+
+                    // main body
+                    egui::ScrollArea::vertical().show(ui, |ui| {
+                        ui.horizontal(|ui| {
+                            ui.set_max_height(200.);
+
+                            ui.label("main body");
+                        });
+                    });
+                });
+            });
 
         // central panel
         egui::CentralPanel::default().show(ctx, |ui| {
