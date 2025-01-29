@@ -1,7 +1,8 @@
-use egui::RichText;
-use egui_extras::{Column, TableBuilder};
+use crate::data::{Cue, CueList, CueTimed};
+use egui::{TextEdit, TextStyle, RichText};
+use egui_extras::{Column, TableBuilder, TableRow};
 
-use crate::CueList;
+const CUE_ID_WIDTH_PX: f32 = 50.;
 
 pub struct CueballApp {
     state: AppState,
@@ -139,9 +140,13 @@ fn inspector_panel_body(ui: &mut egui::Ui, project: &mut Project) {
                         ui.label(format!("Type: {}", cue.type_str_full()));
                     });
                     ui.horizontal(|ui| {
+                        ui.set_width(80.);
                         ui.label("ID:");
                         let mut cue_id = cue.get_id();
-                        ui.text_edit_singleline(&mut cue_id);
+                        ui.add(egui::TextEdit::singleline(
+                            &mut cue_id)
+                            .font(TextStyle::Monospace)
+                            .desired_width(CUE_ID_WIDTH_PX));
                         cue.set_id(cue_id.as_str());
                     });
                     ui.horizontal(|ui| {
@@ -173,6 +178,7 @@ fn cue_list_ui(ui: &mut egui::Ui, project: &mut Project) {
         .sense(egui::Sense::click())
         .header(20.0, |mut header| {
             header.col(|ui| {
+                ui.set_min_width(CUE_ID_WIDTH_PX);
                 ui.strong("Q");
             });
             header.col(|ui| {
