@@ -177,7 +177,28 @@ fn cue_list_ui(ui: &mut egui::Ui, project: &mut Project) {
                 ui.strong("Name");
             });
         })
-        .body(|body| {
+        .body(|mut body| {
+            body.ui_mut().input(|inp| {
+                if let Some(i) = project.selected_cue {
+                    if inp.key_pressed(egui::Key::Home) {
+                        project.selected_cue = Some(0);
+                    }
+                    if inp.key_pressed(egui::Key::ArrowDown) &&
+                            i+1 != project.cues.list.len() {
+                        project.selected_cue = Some(i+1);
+                    }
+                    if inp.key_pressed(egui::Key::ArrowUp) && i!=0 {
+                        project.selected_cue = Some(i-1);
+                    }
+                    if inp.key_pressed(egui::Key::End) &&
+                            project.cues.list.len() != 0 {
+                        project.selected_cue = Some(project.cues.list.len()-1);
+                    }
+                    if inp.key_pressed(egui::Key::Space) {
+                        handle_go(/*&mut project*/);
+                    }
+                }
+            });
             body.rows(18.0, project.cues.list.len(), |mut row| {
                 let i = row.index();
                 let this_selected = Some(i) == project.selected_cue;
@@ -202,4 +223,9 @@ fn cue_list_ui(ui: &mut egui::Ui, project: &mut Project) {
                 }
             });
         });
+}
+
+fn handle_go(/*_project: &mut Project*/) {
+    // Actual functionality to be added
+    println!("Go!");
 }
