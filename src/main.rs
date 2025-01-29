@@ -5,13 +5,6 @@ fn main() -> eframe::Result {
         project: cueball::Project::default(),
     };
 
-    for _ in 0..24 {
-        state
-            .project
-            .cues
-            .add(cueball::CueType::Message(String::from("hi")));
-    }
-
     eframe::run_native(
         "cueball",
         eframe::NativeOptions {

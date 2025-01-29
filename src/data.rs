@@ -1,6 +1,8 @@
-#[derive(Debug)]
+use serde::{Serialize,Deserialize};
+use std::cmp::max;
+
 pub struct CueList {
-    pub list: Vec<Cue>,
+    pub list: Vec<Box<dyn Cue>>,
 }
 
 impl CueList {
@@ -8,41 +10,44 @@ impl CueList {
         Self { list: vec![] }
     }
 
-    pub fn add(&mut self, cue_type: CueType) {
-        let cue = Cue {
-            id: self.get_new_cue_id(),
-            name: match &cue_type {
-                CueType::Message(msg) => msg.clone(),
-                CueType::Process => String::from("Process cue"),
-            },
-            cue_type,
-        };
-        self.list.push(cue);
-    }
-
     fn get_new_cue_id(&self) -> u64 {
         let mut largest_id = 0;
 
         for cue in &self.list {
-            if cue.id > largest_id {
-                largest_id = cue.id;
-            }
+            largest_id = max(cue.id_num().unwrap_or(0), largest_id);
         }
 
         largest_id + 1
     }
 }
 
-#[derive(Debug)]
-pub struct Cue {
-    pub id: u64,
-    pub name: String,
+pub trait Cue {
+    fn id(&self)                    -> String;
+    fn id_num(&self)                -> Option<u64> {
+        self.id().parse::<u64>().ok()
+    }
+    fn type_str_full(&self)         -> String;
+    fn type_str_short(&self)        -> String;
+    fn name(&self)                  -> Option<String>;
 
-    pub cue_type: CueType,
+    fn is_enabled(&self)            -> bool;
+    fn set_enabled(&self, to: bool) -> ();
+    fn is_armed(&self)              -> bool;
+    fn set_armed(&self, to: bool)   -> ();
+    fn is_errored(&self)            -> bool; // Possibly convert to Option later
+    fn can_fire(&self)              -> bool;
+
+    fn is_networked(&self)          -> bool;
+
+    fn go(&self)                    -> ();
+    fn running(&self)               -> CueRunning;
+    fn stop(&self)                  -> ();
+    fn set_paused(&self, pu: bool)  -> ();
 }
 
-#[derive(Debug)]
-pub enum CueType {
-    Message(String),
-    Process,
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+pub enum CueRunning {
+    Running,
+    Paused,
+    Stopped
 }

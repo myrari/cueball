@@ -3,7 +3,6 @@ use crate::data::{Cue, CueList};
 use egui::RichText;
 use egui_extras::{Column, TableBuilder, TableRow};
 
-#[derive(Debug)]
 pub struct CueballApp {
     state: AppState,
 }
@@ -25,12 +24,10 @@ impl CueballApp {
     }
 }
 
-#[derive(Debug)]
 pub struct AppState {
     pub project: Project,
 }
 
-#[derive(Debug)]
 pub struct Project {
     pub name: String,
 
@@ -176,14 +173,14 @@ fn cue_list_ui(ui: &mut egui::Ui, project: &Project) {
         });
 }
 
-fn cue_row_ui(row: &mut TableRow, cue: &Cue) {
+fn cue_row_ui(row: &mut TableRow, cue: &Box<dyn Cue>) {
     row.col(|ui| {
-        ui.label(RichText::new(format!("{}", cue.id)).text_style(egui::TextStyle::Monospace));
+        ui.label(RichText::new(cue.id()).text_style(egui::TextStyle::Monospace));
     });
     row.col(|ui| {
-        ui.label("TBD");
+        ui.label(cue.type_str_short().clone());
     });
     row.col(|ui| {
-        ui.label(cue.name.clone());
+        ui.label(cue.name().unwrap_or("unnamed cue".to_string()).clone());
     });
 }
