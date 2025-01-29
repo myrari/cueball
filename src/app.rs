@@ -1,5 +1,5 @@
 //use std::collections::HashSet;
-use crate::data::{Cue, CueList};
+use crate::data::{Cue, CueList, CueTimed};
 use egui::RichText;
 use egui_extras::{Column, TableBuilder, TableRow};
 
