@@ -1,6 +1,7 @@
-use crate::data::{Cue, CueList, CueTimed};
 use egui::RichText;
-use egui_extras::{Column, TableBuilder, TableRow};
+use egui_extras::{Column, TableBuilder};
+
+use crate::CueList;
 
 pub struct CueballApp {
     state: AppState,
@@ -130,7 +131,7 @@ fn inspector_panel_body(ui: &mut egui::Ui, project: &mut Project) {
         ui.set_width(ui.available_width());
         match project.inspector_panel.selected_tab {
             InspectorPanelTabs::Basics => {
-                let mut cue = &mut project.cues.list[project.selected_cue.unwrap()];
+                let cue = &mut project.cues.list[project.selected_cue.unwrap()];
                 // first row
                 ui.horizontal(|ui| {
                     // cue number
@@ -139,11 +140,15 @@ fn inspector_panel_body(ui: &mut egui::Ui, project: &mut Project) {
                     });
                     ui.horizontal(|ui| {
                         ui.label("ID:");
-                        ui.text_edit_singleline(&mut cue.get_id());
+                        let mut cue_id = cue.get_id();
+                        ui.text_edit_singleline(&mut cue_id);
+                        cue.set_id(cue_id.as_str());
                     });
                     ui.horizontal(|ui| {
                         ui.label("Name:");
-                        ui.text_edit_singleline(&mut cue.get_name());
+                        let mut cue_name = cue.get_name();
+                        ui.text_edit_singleline(&mut cue_name);
+                        cue.set_name(cue_name.as_str());
                     });
                 });
             }
@@ -183,19 +188,17 @@ fn cue_list_ui(ui: &mut egui::Ui, project: &mut Project) {
                     if inp.key_pressed(egui::Key::Home) {
                         project.selected_cue = Some(0);
                     }
-                    if inp.key_pressed(egui::Key::ArrowDown) &&
-                            i+1 != project.cues.list.len() {
-                        project.selected_cue = Some(i+1);
+                    if inp.key_pressed(egui::Key::ArrowDown) && i + 1 != project.cues.list.len() {
+                        project.selected_cue = Some(i + 1);
                     }
-                    if inp.key_pressed(egui::Key::ArrowUp) && i!=0 {
-                        project.selected_cue = Some(i-1);
+                    if inp.key_pressed(egui::Key::ArrowUp) && i != 0 {
+                        project.selected_cue = Some(i - 1);
                     }
-                    if inp.key_pressed(egui::Key::End) &&
-                            project.cues.list.len() != 0 {
-                        project.selected_cue = Some(project.cues.list.len()-1);
+                    if inp.key_pressed(egui::Key::End) && project.cues.list.len() != 0 {
+                        project.selected_cue = Some(project.cues.list.len() - 1);
                     }
                     if inp.key_pressed(egui::Key::Space) {
-                        handle_go(/*&mut project*/);
+                        handle_go(project);
                     }
                 }
             });
@@ -205,8 +208,10 @@ fn cue_list_ui(ui: &mut egui::Ui, project: &mut Project) {
                 let cue = &project.cues.list[i];
                 row.set_selected(this_selected);
                 row.col(|ui| {
-                    ui.label(RichText::new(cue.get_id())
-                        .text_style(egui::TextStyle::Monospace));
+                    ui.label(RichText::new(cue.get_id()).text_style(egui::TextStyle::Monospace));
+                    //for cue in &project.cues.list {
+                    //    body.row(18.0, |mut row| {
+                    //        cue_row_ui(&mut row, cue, &mut project.selected_cue);
                 });
                 row.col(|ui| {
                     ui.label(cue.type_str_short());
@@ -225,7 +230,28 @@ fn cue_list_ui(ui: &mut egui::Ui, project: &mut Project) {
         });
 }
 
-fn handle_go(/*_project: &mut Project*/) {
+fn handle_go(_project: &mut Project) {
     // Actual functionality to be added
     println!("Go!");
 }
+
+//fn cue_row_ui(row: &mut TableRow, cue: &Box<dyn Cue>, selected_cue: &mut Option<String>) {
+//    if selected_cue.as_ref().is_some_and(|c| *c == cue.get_id()) {
+//        // this cue is selected
+//        row.set_selected(true);
+//    }
+//
+//    row.col(|ui| {
+//        ui.label(RichText::new(cue.get_id()).text_style(egui::TextStyle::Monospace));
+//    });
+//    row.col(|ui| {
+//        ui.label(cue.type_str_short());
+//    });
+//    row.col(|ui| {
+//        ui.label(cue.get_name());
+//    });
+//
+//    if row.response().clicked() {
+//        *selected_cue = Some(cue.get_id());
+//    }
+//}
