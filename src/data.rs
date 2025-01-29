@@ -10,6 +10,15 @@ impl CueList {
         Self { list: vec![] }
     }
 
+    pub fn add(&mut self, new_cue: Box<dyn Cue>) -> Result<(), ()> {
+        if self.id_uniqueness_check(new_cue.get_id()) {
+            self.list.push(new_cue);
+            Ok(())
+        } else {
+            Err(())
+        }
+    }
+
     pub fn get_new_cue_id(&self) -> u64 {
         let mut largest_id = 0;
 
@@ -19,6 +28,8 @@ impl CueList {
 
         largest_id + 1
     }
+
+    pub fn id_uniqueness_check(&self, _new_id: String) -> bool {true} // FIXME
 }
 
 pub trait Cue {
