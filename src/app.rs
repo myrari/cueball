@@ -82,34 +82,40 @@ impl eframe::App for CueballApp {
                     }
                 });
             });
+            ui.label("test");
         });
 
         egui::TopBottomPanel::bottom("inspector_panel")
             .resizable(true)
             .show(ctx, |ui| {
-                ui.vertical(|ui| {
-                    // tab ribbon
-                    ui.horizontal(|ui| {
-                        ui.set_height(16.);
+                ui.set_min_height(216.);
+                if let Some(_cue_index) = self.state.project.selected_cue {
+                    ui.vertical(|ui| {
+                        // tab ribbon
+                        ui.horizontal(|ui| {
+                            ui.set_height(16.);
 
-                        // add buttons for each tab
-                        ui.selectable_value(
-                            &mut self.state.project.inspector_panel.selected_tab,
-                            InspectorPanelTabs::Basics,
-                            "Basics",
-                        );
-                        ui.selectable_value(
-                            &mut self.state.project.inspector_panel.selected_tab,
-                            InspectorPanelTabs::TimeLoops,
-                            "Time & Loops",
-                        );
-                    });
+                            // add buttons for each tab
+                            ui.selectable_value(
+                                &mut self.state.project.inspector_panel.selected_tab,
+                                InspectorPanelTabs::Basics,
+                                "Basics",
+                            );
+                            ui.selectable_value(
+                                &mut self.state.project.inspector_panel.selected_tab,
+                                InspectorPanelTabs::TimeLoops,
+                                "Time & Loops",
+                            );
+                        });
 
-                    // main body
-                    egui::ScrollArea::vertical().show(ui, |ui| {
-                        inspector_panel_body(ui, &self.state.project);
+                        // main body
+                        egui::ScrollArea::vertical().show(ui, |ui| {
+                            inspector_panel_body(ui, &mut self.state.project);
+                        });
                     });
-                });
+                } else {
+                    ui.heading("Select a cue to edit it.");
+                }
             });
 
         // central panel
@@ -119,26 +125,33 @@ impl eframe::App for CueballApp {
     }
 }
 
-fn inspector_panel_body(ui: &mut egui::Ui, project: &Project) {
+fn inspector_panel_body(ui: &mut egui::Ui, project: &mut Project) {
     ui.horizontal(|ui| {
-        ui.set_max_height(200.);
+        //ui.set_min_height(200.);
         ui.set_width(ui.available_width());
-
         match project.inspector_panel.selected_tab {
             InspectorPanelTabs::Basics => {
-                // first column
-                ui.vertical(|ui| {
+                let mut cue = &mut project.cues.list[project.selected_cue.unwrap()];
+                // first row
+                ui.horizontal(|ui| {
                     // cue number
                     ui.horizontal(|ui| {
-                        ui.label("Number:");
-                        // put in editable cue number once cues are reworked
+                        ui.label(format!("Type: {}", cue.type_str_full()));
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("ID:");
+                        ui.text_edit_singleline(&mut cue.get_id());
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("Name:");
+                        ui.text_edit_singleline(&mut cue.get_name());
                     });
                 });
             }
             InspectorPanelTabs::TimeLoops => {
                 ui.label("time & loops lol");
             }
-        };
+        }
     });
 }
 
