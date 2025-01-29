@@ -209,9 +209,6 @@ fn cue_list_ui(ui: &mut egui::Ui, project: &mut Project) {
                 row.set_selected(this_selected);
                 row.col(|ui| {
                     ui.label(RichText::new(cue.get_id()).text_style(egui::TextStyle::Monospace));
-                    //for cue in &project.cues.list {
-                    //    body.row(18.0, |mut row| {
-                    //        cue_row_ui(&mut row, cue, &mut project.selected_cue);
                 });
                 row.col(|ui| {
                     ui.label(cue.type_str_short());
@@ -234,24 +231,3 @@ fn handle_go(_project: &mut Project) {
     // Actual functionality to be added
     println!("Go!");
 }
-
-//fn cue_row_ui(row: &mut TableRow, cue: &Box<dyn Cue>, selected_cue: &mut Option<String>) {
-//    if selected_cue.as_ref().is_some_and(|c| *c == cue.get_id()) {
-//        // this cue is selected
-//        row.set_selected(true);
-//    }
-//
-//    row.col(|ui| {
-//        ui.label(RichText::new(cue.get_id()).text_style(egui::TextStyle::Monospace));
-//    });
-//    row.col(|ui| {
-//        ui.label(cue.type_str_short());
-//    });
-//    row.col(|ui| {
-//        ui.label(cue.get_name());
-//    });
-//
-//    if row.response().clicked() {
-//        *selected_cue = Some(cue.get_id());
-//    }
-//}
