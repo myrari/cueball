@@ -11,7 +11,7 @@ impl CueList {
     }
 
     pub fn add(&mut self, new_cue: Box<dyn Cue>) -> Result<(), ()> {
-        if self.id_uniqueness_check(new_cue.get_id()) {
+        if self.consistency_checks_add(&new_cue) {
             self.list.push(new_cue);
             Ok(())
         } else {
@@ -29,7 +29,12 @@ impl CueList {
         largest_id + 1
     }
 
-    pub fn id_uniqueness_check(&self, _new_id: String) -> bool {true} // FIXME
+    pub fn consistency_checks_add(&self, new_cue: &Box<dyn Cue>) -> bool {
+        // FIXME: this should also check that all referents exist for
+        // instances of CueReferencing.
+        self.id_uniqueness_check(&new_cue.get_id())
+    }
+    fn id_uniqueness_check(&self, _new_id: &String) -> bool {true} // FIXME
 }
 
 pub trait Cue {
@@ -42,6 +47,10 @@ pub trait Cue {
     fn set_name(&mut self, new_name: &str) -> ();
     fn type_str_full(&self)                -> String;
     fn type_str_short(&self)               -> String;
+}
+
+pub trait CueReferencing: Cue {
+    fn get_referents(&self)                -> Vec<&String>;
 }
 
 pub trait CueRunnable: Cue {
