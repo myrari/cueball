@@ -38,15 +38,30 @@ pub struct Project {
     inspector_panel: InspectorPanel,
 }
 
+impl Project {
+    fn select_cue(&mut self, new_cue_index: usize) -> Option<&Box<dyn Cue>> {
+        if new_cue_index < self.cues.list.len() {
+            let new_cue = &self.cues.list[new_cue_index];
+            self.selected_cue = Some(new_cue_index);
+            self.inspector_panel.id_buf = new_cue.get_id();
+            Some(new_cue)
+        } else {
+            None
+        }
+    }
+}
+
 #[derive(Debug)]
 struct InspectorPanel {
     selected_tab: InspectorPanelTabs,
+    id_buf: String
 }
 
 impl Default for InspectorPanel {
     fn default() -> Self {
         Self {
             selected_tab: InspectorPanelTabs::Basics,
+            id_buf: String::new()
         }
     }
 }
@@ -142,12 +157,14 @@ fn inspector_panel_body(ui: &mut egui::Ui, project: &mut Project) {
                     ui.horizontal(|ui| {
                         ui.set_width(80.);
                         ui.label("ID:");
-                        let mut cue_id = cue.get_id();
-                        ui.add(egui::TextEdit::singleline(
-                            &mut cue_id)
+                        let resp = ui.add(egui::TextEdit::singleline(
+                            &mut project.inspector_panel.id_buf)
                             .font(TextStyle::Monospace)
                             .desired_width(CUE_ID_WIDTH_PX));
-                        cue.set_id(cue_id.as_str());
+                        if resp.lost_focus() &&
+                                ui.input(|i| i.key_pressed(egui::Key::Enter)) {
+                            cue.set_id(project.inspector_panel.id_buf.as_str());
+                        }
                     });
                     ui.horizontal(|ui| {
                         ui.label("Name:");
@@ -192,16 +209,16 @@ fn cue_list_ui(ui: &mut egui::Ui, project: &mut Project) {
             body.ui_mut().input(|inp| {
                 if let Some(i) = project.selected_cue {
                     if inp.key_pressed(egui::Key::Home) {
-                        project.selected_cue = Some(0);
+                        project.select_cue(0);
                     }
-                    if inp.key_pressed(egui::Key::ArrowDown) && i + 1 != project.cues.list.len() {
-                        project.selected_cue = Some(i + 1);
+                    if inp.key_pressed(egui::Key::ArrowDown) {
+                        project.select_cue(i + 1);
                     }
                     if inp.key_pressed(egui::Key::ArrowUp) && i != 0 {
-                        project.selected_cue = Some(i - 1);
+                        project.select_cue(i - 1);
                     }
                     if inp.key_pressed(egui::Key::End) && project.cues.list.len() != 0 {
-                        project.selected_cue = Some(project.cues.list.len() - 1);
+                        project.select_cue(project.cues.list.len() - 1);
                     }
                     if inp.key_pressed(egui::Key::Space) {
                         handle_go(project);
@@ -224,9 +241,9 @@ fn cue_list_ui(ui: &mut egui::Ui, project: &mut Project) {
                 });
                 if row.response().clicked() {
                     if this_selected {
-                        project.selected_cue = None
+                        project.selected_cue = None;
                     } else {
-                        project.selected_cue = Some(i)
+                        project.select_cue(i);
                     }
                 }
             });
