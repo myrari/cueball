@@ -40,11 +40,13 @@ fn main() -> Result<(), ()> {
                         CLIMode::CLI => (),
                         CLIMode::Lua => {
                             match lua.load(inp).eval::<LuaMultiValue>() {
-                                Ok(xs) => println!("{}", xs
+                                Ok(xs) => if !xs.is_empty() {
+                                    println!("{}", xs
                                     .iter()
                                     .map(|x| format!("{:#?}", x))
                                     .collect::<Vec<_>>()
-                                    .join("\t")),
+                                    .join("\t"))
+                                },
                                 // Switch to Log
                                 Err(err) => println!("Error: {:?}", err)
                             }
