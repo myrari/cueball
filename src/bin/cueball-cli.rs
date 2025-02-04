@@ -1,4 +1,5 @@
 use reedline::{DefaultPrompt, DefaultPromptSegment, Reedline, Signal};
+use mlua::prelude::*;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 enum CLIMode {
@@ -16,8 +17,10 @@ fn main() -> Result<(), ()> {
     let mut line_editor_lua = Reedline::create();
     let mut mode = CLIMode::CLI;
 
+    let lua = Lua::new();
+
     loop {
-        let mut line_editor = match mode {
+        let line_editor = match mode {
             CLIMode::CLI => &mut line_editor_cli,
             CLIMode::Lua => &mut line_editor_lua
         };
@@ -27,18 +30,29 @@ fn main() -> Result<(), ()> {
             DefaultPromptSegment::CurrentDateTime);
         let sig = line_editor.read_line(&prompt);
         match sig {
-            Ok(Signal::Success(buffer)) => {
-                match buffer.as_str() {
+            Ok(Signal::Success(inp)) => {
+                match inp.as_str() {
                     "/cli" => mode = CLIMode::CLI,
                     "/lua" => mode = CLIMode::Lua,
                     "/exit" => break,
                     ""      => (),
-                    _ => {
+                    _ => match mode {
+                        CLIMode::CLI => (),
+                        CLIMode::Lua => {
+                            let torun = match inp.chars().nth(0).unwrap() {
+                                '=' => format!("print({})", inp.split_at(1).1),
+                                _ => inp
+                            };
+                            match lua.load(torun).exec() {
+                                Ok(()) => (),
+                                // Switch to Log
+                                Err(err) => println!("Error: {:?}", err)
+                            }
+                        }
                     }
                 }
             }
             Ok(Signal::CtrlD) | Ok(Signal::CtrlC) => {
-                println!("\nAborted!");
                 break;
             }
             x => {
