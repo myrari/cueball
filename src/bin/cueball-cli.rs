@@ -39,12 +39,12 @@ fn main() -> Result<(), ()> {
                     _ => match mode {
                         CLIMode::CLI => (),
                         CLIMode::Lua => {
-                            let torun = match inp.chars().nth(0).unwrap() {
-                                '=' => format!("print({})", inp.split_at(1).1),
-                                _ => inp
-                            };
-                            match lua.load(torun).exec() {
-                                Ok(()) => (),
+                            match lua.load(inp).eval::<LuaMultiValue>() {
+                                Ok(xs) => println!("{}", xs
+                                    .iter()
+                                    .map(|x| format!("{:#?}", x))
+                                    .collect::<Vec<_>>()
+                                    .join("\t")),
                                 // Switch to Log
                                 Err(err) => println!("Error: {:?}", err)
                             }
