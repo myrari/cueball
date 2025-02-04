@@ -76,6 +76,11 @@ pub enum CueRunning {
     Paused,
     Stopped
 }
+impl IntoLua for CueRunning {
+    fn into_lua(self, lua: &Lua) -> LuaResult<LuaValue> {
+        Ok(format!("{:?}", self).into_lua(lua)?)
+    }
+}
 
 // Possibly change time representation later.
 // For now this is a float of seconds.
@@ -128,5 +133,28 @@ impl LuaUserData for Box<dyn Cue> {
         fields.add_field_method_get("type_s", |_, this|
             Ok(this.type_str_short()));
         fields.add_field_method_get("type", |_, this| Ok(this.type_str_full()));
+    }
+}
+
+impl LuaUserData for Box<dyn CueRunnable> {
+    fn add_fields<F: LuaUserDataFields<Self>>(fields: &mut F) {
+        fields.add_field_method_get("enabled",  |_, this|
+            Ok(this.is_enabled()));
+        fields.add_field_method_set("enabled",  |_, this, enabled: bool|
+            Ok(this.set_enabled(enabled)));
+        fields.add_field_method_get("armed",    |_, this|
+            Ok(this.is_armed()));
+        fields.add_field_method_set("armed",    |_, this, armed: bool|
+            Ok(this.set_armed(armed)));
+        fields.add_field_method_get("errored",  |_, this|
+            Ok(this.is_errored()));
+        fields.add_field_method_get("can_fire", |_, this| Ok(this.can_fire()));
+        fields.add_field_method_get("running",  |_, this| Ok(this.running()));
+    }
+    fn add_methods<M: LuaUserDataMethods<Self>>(methods: &mut M) {
+        methods.add_method_mut("go",         |_, this, ()| Ok(this.go()));
+        methods.add_method_mut("stop",       |_, this, ()| Ok(this.stop()));
+        methods.add_method_mut("set_paused",
+            |_, this, x: bool| Ok(this.set_paused(x)));
     }
 }
