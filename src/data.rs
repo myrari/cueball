@@ -158,3 +158,14 @@ impl LuaUserData for Box<dyn CueRunnable> {
             |_, this, x: bool| Ok(this.set_paused(x)));
     }
 }
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum CLIMode {
+    CLI,
+    Lua
+}
+impl std::fmt::Display for CLIMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
