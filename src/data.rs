@@ -85,6 +85,7 @@ pub trait CueTimed: CueRunnable {
     fn length()    -> Option<CueTime>;
     fn elapsed()   -> Option<CueTime>;
     fn remaining() -> Option<CueTime>;
+    fn reset()     -> Result<(), ()>;
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
