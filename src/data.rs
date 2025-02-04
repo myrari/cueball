@@ -37,6 +37,11 @@ impl CueList {
     fn id_uniqueness_check(&self, _new_id: &String) -> bool {true} // FIXME
 }
 
+
+// Possibly change time representation later.
+// For now this is a float of seconds.
+pub type CueTime = f64;
+
 pub trait Cue {
     fn get_id(&self)                       -> String;
     fn set_id(&mut self, new_id: &str)         -> ();
@@ -47,26 +52,32 @@ pub trait Cue {
     fn set_name(&mut self, new_name: &str) -> ();
     fn type_str_full(&self)                -> String;
     fn type_str_short(&self)               -> String;
-}
 
-pub trait CueReferencing: Cue {
-    fn get_referents(&self)                -> Vec<&String>;
-}
+    fn get_referents(&self)                -> Vec<&String> {Vec::new()}
 
-pub trait CueRunnable: Cue {
-    fn is_enabled(&self)            -> bool;
-    fn set_enabled(&self, to: bool) -> ();
-    fn is_armed(&self)              -> bool;
-    fn set_armed(&self, to: bool)   -> ();
-    fn is_errored(&self)            -> bool; // Possibly convert to Option later
-    fn can_fire(&self)              -> bool;
+    fn is_enabled(&self)             -> bool {false}
+    fn set_enabled(&self, _to: bool) -> () {}
+    fn is_armed(&self)               -> bool {false}
+    fn set_armed(&self, _to: bool)   -> () {}
+    fn is_errored(&self)             -> bool {false}
+    fn can_fire(&self)               -> bool {
+        self.is_enabled()
+            && self.is_armed()
+            && !self.is_errored()
+    }
 
-    fn is_networked(&self)          -> bool;
+    fn is_networked(&self)          -> bool {false}
 
-    fn go(&self)                    -> ();
-    fn running(&self)               -> CueRunning;
-    fn stop(&self)                  -> ();
-    fn set_paused(&self, pu: bool)  -> ();
+    fn go(&self)                    -> () {}
+    fn running(&self)               -> CueRunning {CueRunning::Stopped}
+    fn stop(&self)                  -> () {}
+    fn set_paused(&self, _pu: bool)  -> () {}
+
+    fn bounded(&self)   -> bool            {false}
+    fn length(&self)    -> Option<CueTime> {None}
+    fn elapsed(&self)   -> Option<CueTime> {None}
+    fn remaining(&self) -> Option<CueTime> {None}
+    fn reset(&mut self)     -> Result<(), ()>  {Err(())}
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
@@ -74,18 +85,6 @@ pub enum CueRunning {
     Running,
     Paused,
     Stopped
-}
-
-// Possibly change time representation later.
-// For now this is a float of seconds.
-pub type CueTime = f64;
-
-pub trait CueTimed: CueRunnable {
-    fn bounded()   -> bool;
-    fn length()    -> Option<CueTime>;
-    fn elapsed()   -> Option<CueTime>;
-    fn remaining() -> Option<CueTime>;
-    fn reset()     -> Result<(), ()>;
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
