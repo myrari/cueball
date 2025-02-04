@@ -38,10 +38,6 @@ impl CueList {
 }
 
 
-// Possibly change time representation later.
-// For now this is a float of seconds.
-pub type CueTime = f64;
-
 pub trait Cue {
     fn get_id(&self)                       -> String;
     fn set_id(&mut self, new_id: &str)         -> ();
@@ -52,6 +48,9 @@ pub trait Cue {
     fn set_name(&mut self, new_name: &str) -> ();
     fn type_str_full(&self)                -> String;
     fn type_str_short(&self)               -> String;
+    fn get_attributes(&self)               -> CueTypeAttributes {
+        CueTypeAttributes::default()
+    }
 
     fn get_referents(&self)                -> Vec<&String> {Vec::new()}
 
@@ -86,6 +85,31 @@ pub enum CueRunning {
     Paused,
     Stopped
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+pub struct CueTypeAttributes {
+    runnable: bool,
+    timed: bool,
+    timed_bounded: bool,
+    networked: Option<bool>,
+    idempotent: bool,
+    tc: bool
+}
+impl Default for CueTypeAttributes {
+    fn default() -> Self {
+        CueTypeAttributes {
+            runnable: false,
+            timed: false,
+            timed_bounded: false,
+            networked: Some(false),
+            idempotent: true,
+            tc: false
+        }
+    }
+}
+// Possibly change time representation later.
+// For now this is a float of seconds.
+pub type CueTime = f64;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct RemarkCue {
