@@ -1,5 +1,6 @@
 use serde::{Serialize,Deserialize};
 use std::cmp::max;
+use mlua::prelude::*;
 
 pub struct CueList {
     pub list: Vec<Box<dyn Cue>>,
@@ -114,4 +115,18 @@ impl Cue for RemarkCue {
     }
     fn type_str_full(&self)  -> String {"Remark".to_string()}
     fn type_str_short(&self) -> String {"Rmk".to_string()}
+}
+
+impl LuaUserData for Box<dyn Cue> {
+    fn add_fields<F: LuaUserDataFields<Self>>(fields: &mut F) {
+        // This might get removed depending on if ID storage changes
+        fields.add_field_method_get("id",   |_, this| Ok(this.get_id()));
+        // Add method for setting ID
+        fields.add_field_method_get("name", |_, this| Ok(this.get_name()));
+        fields.add_field_method_set("name", |_, this, new_name: String|
+            Ok(this.set_name(&new_name)));
+        fields.add_field_method_get("type_s", |_, this|
+            Ok(this.type_str_short()));
+        fields.add_field_method_get("type", |_, this| Ok(this.type_str_full()));
+    }
 }
