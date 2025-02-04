@@ -12,12 +12,11 @@ impl std::fmt::Display for CLIMode {
     }
 }
 
-fn main() -> Result<(), ()> {
+fn cueball_cli(initial_mode: CLIMode, lua: Lua) -> Result<(), ()> {
     let mut line_editor_cli = Reedline::create();
     let mut line_editor_lua = Reedline::create();
-    let mut mode = CLIMode::CLI;
+    let mut mode = initial_mode;
 
-    let lua = Lua::new();
 
     loop {
         let line_editor = match mode {
@@ -64,4 +63,9 @@ fn main() -> Result<(), ()> {
     }
 
     Ok(())
+}
+
+fn main() -> Result<(), ()> {
+    let lua = Lua::new();
+    cueball_cli(CLIMode::CLI, lua)
 }
