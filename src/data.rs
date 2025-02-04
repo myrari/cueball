@@ -94,6 +94,15 @@ pub struct RemarkCue {
     pub name: String,
     pub notes: String
 }
+impl Default for RemarkCue {
+    fn default() -> Self {
+        RemarkCue {
+            id: "0".to_string(),
+            name: "New remark cue".to_string(),
+            notes: "".to_string()
+        }
+    }
+}
 impl Cue for RemarkCue {
     fn get_id(&self)         -> String {self.id.clone()}
     fn get_name(&self)       -> String {self.name.clone()}
