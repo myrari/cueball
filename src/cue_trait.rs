@@ -85,12 +85,12 @@ pub enum CueRunning {
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct CueTypeAttributes {
-    runnable: bool,
-    timed: bool,
-    timed_bounded: bool,
-    networked: Option<bool>,
-    idempotent: bool,
-    tc: bool
+    pub runnable: bool,
+    pub timed: bool,
+    pub timed_bounded: bool,
+    pub networked: Option<bool>,
+    pub idempotent: bool,
+    pub tc: bool
 }
 impl Default for CueTypeAttributes {
     fn default() -> Self {
