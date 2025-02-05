@@ -40,7 +40,7 @@ impl CueList {
 
 pub trait Cue {
     fn get_id(&self)                       -> String;
-    fn set_id(&mut self, new_id: &str)         -> ();
+    fn set_id(&mut self, new_id: &str)     -> ();
     fn get_id_num(&self)                   -> Option<u64> {
         self.get_id().parse::<u64>().ok()
     }
@@ -52,31 +52,28 @@ pub trait Cue {
         CueTypeAttributes::default()
     }
 
-    fn get_referents(&self)                -> Vec<&String> {Vec::new()}
+    fn get_referents(&self)              -> Vec<&String> {Vec::new()}
 
-    fn is_enabled(&self)             -> bool {false}
-    fn set_enabled(&self, _to: bool) -> () {}
-    fn is_armed(&self)               -> bool {false}
-    fn set_armed(&self, _to: bool)   -> () {}
-    fn is_errored(&self)             -> bool {false}
-    fn can_fire(&self)               -> bool {
+    fn is_enabled(&self)                 -> bool {false}
+    fn set_enabled(&mut self, _to: bool) -> () {}
+    fn is_armed(&self)                   -> bool {false}
+    fn set_armed(&mut self, _to: bool)   -> () {}
+    fn is_errored(&self)                 -> bool {false}
+    fn can_fire(&self)                   -> bool {
         self.is_enabled()
             && self.is_armed()
             && !self.is_errored()
     }
 
-    fn is_networked(&self)          -> bool {false}
+    fn go(&mut self)                    -> () {}
+    fn running(&self)                   -> CueRunning {CueRunning::Stopped}
+    fn stop(&mut self)                  -> () {}
+    fn set_paused(&mut self, _pu: bool) -> () {}
 
-    fn go(&self)                    -> () {}
-    fn running(&self)               -> CueRunning {CueRunning::Stopped}
-    fn stop(&self)                  -> () {}
-    fn set_paused(&self, _pu: bool)  -> () {}
-
-    fn bounded(&self)   -> bool            {false}
     fn length(&self)    -> Option<CueTime> {None}
     fn elapsed(&self)   -> Option<CueTime> {None}
     fn remaining(&self) -> Option<CueTime> {None}
-    fn reset(&mut self)     -> Result<(), ()>  {Err(())}
+    fn reset(&mut self) -> Result<(), ()>  {Err(())}
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
