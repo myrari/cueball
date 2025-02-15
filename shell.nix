@@ -12,6 +12,11 @@ in {
 			cargo
 			rustc
 			rust-analyzer
+
+			# for LUA cli
+			lua
+
+			pkg-config
 		];
 
 		RUST_LOG = "info";
