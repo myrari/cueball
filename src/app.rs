@@ -1,6 +1,6 @@
-use crate::data::{Cue, CueList, CueTimed};
-use egui::{TextEdit, TextStyle, RichText};
-use egui_extras::{Column, TableBuilder, TableRow};
+use crate::data::{Cue, CueList};
+use egui::{TextStyle, RichText};
+use egui_extras::{Column, TableBuilder};
 
 const CUE_ID_WIDTH_PX: f32 = 50.;
 
