@@ -7,11 +7,15 @@ fn main() -> eframe::Result {
     };
 
     for i in 0..31 {
-        state.project.cues.add(Box::new(RemarkCue {
-            id: i.to_string(),
-            name: format!("Cue #{:04}", i),
-            notes: "".to_string()
-        })).unwrap();
+        state
+            .project
+            .cues
+            .add(Box::new(RemarkCue {
+                id: i.to_string(),
+                name: format!("Cue #{:04}", i),
+                notes: "".to_string(),
+            }))
+            .unwrap();
     }
 
     eframe::run_native(

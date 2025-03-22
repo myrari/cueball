@@ -1,5 +1,5 @@
+use cueball::{cueball_cli, CLIMode};
 use mlua::prelude::*;
-use cueball::{CLIMode, cueball_cli};
 
 fn main() -> Result<(), ()> {
     let lua = Lua::new();

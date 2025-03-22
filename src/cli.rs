@@ -1,4 +1,4 @@
-use crate::CLIMode;
+use crate::cue_trait::CLIMode;
 use mlua::prelude::*;
 use reedline::{DefaultPrompt, DefaultPromptSegment, Reedline, Signal};
 
