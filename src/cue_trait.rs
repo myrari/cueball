@@ -1,4 +1,5 @@
-use serde::{Serialize,Deserialize};
+use mlua::prelude::*;
+use serde::{Deserialize, Serialize};
 use std::cmp::max;
 
 pub struct CueList {
@@ -34,53 +35,75 @@ impl CueList {
         // instances of CueReferencing.
         self.id_uniqueness_check(&new_cue.get_id())
     }
-    fn id_uniqueness_check(&self, _new_id: &String) -> bool {true} // FIXME
+    fn id_uniqueness_check(&self, _new_id: &String) -> bool {
+        true
+    } // FIXME
 }
 
-
 pub trait Cue {
-    fn get_id(&self)                       -> String;
-    fn set_id(&mut self, new_id: &str)     -> ();
-    fn get_id_num(&self)                   -> Option<u64> {
+    fn get_id(&self) -> String;
+    fn set_id(&mut self, new_id: &str) -> ();
+    fn get_id_num(&self) -> Option<u64> {
         self.get_id().parse::<u64>().ok()
     }
-    fn get_name(&self)                     -> String;
+    fn get_name(&self) -> String;
     fn set_name(&mut self, new_name: &str) -> ();
-    fn type_str_full(&self)                -> String;
-    fn type_str_short(&self)               -> String;
-    fn get_attributes(&self)               -> CueTypeAttributes {
+    fn type_str_full(&self) -> String;
+    fn type_str_short(&self) -> String;
+    fn get_attributes(&self) -> CueTypeAttributes {
         CueTypeAttributes::default()
     }
 
-    fn get_referents(&self)              -> Vec<&String> {Vec::new()}
-
-    fn is_enabled(&self)                 -> bool {false}
-    fn set_enabled(&mut self, _to: bool) -> () {}
-    fn is_armed(&self)                   -> bool {false}
-    fn set_armed(&mut self, _to: bool)   -> () {}
-    fn is_errored(&self)                 -> bool {false}
-    fn can_fire(&self)                   -> bool {
-        self.is_enabled()
-            && self.is_armed()
-            && !self.is_errored()
+    fn get_referents(&self) -> Vec<&String> {
+        Vec::new()
     }
 
-    fn go(&mut self)                    -> () {}
-    fn running(&self)                   -> CueRunning {CueRunning::Stopped}
-    fn stop(&mut self)                  -> () {}
+    fn is_enabled(&self) -> bool {
+        false
+    }
+    fn set_enabled(&mut self, _to: bool) -> () {}
+    fn is_armed(&self) -> bool {
+        false
+    }
+    fn set_armed(&mut self, _to: bool) -> () {}
+    fn is_errored(&self) -> bool {
+        false
+    }
+    fn can_fire(&self) -> bool {
+        self.is_enabled() && self.is_armed() && !self.is_errored()
+    }
+
+    fn go(&mut self) -> () {}
+    fn running(&self) -> CueRunning {
+        CueRunning::Stopped
+    }
+    fn stop(&mut self) -> () {}
     fn set_paused(&mut self, _pu: bool) -> () {}
 
-    fn length(&self)    -> Option<CueTime> {None}
-    fn elapsed(&self)   -> Option<CueTime> {None}
-    fn remaining(&self) -> Option<CueTime> {None}
-    fn reset(&mut self) -> Result<(), ()>  {Err(())}
+    fn length(&self) -> Option<CueTime> {
+        None
+    }
+    fn elapsed(&self) -> Option<CueTime> {
+        None
+    }
+    fn remaining(&self) -> Option<CueTime> {
+        None
+    }
+    fn reset(&mut self) -> Result<(), ()> {
+        Err(())
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
 pub enum CueRunning {
     Running,
     Paused,
-    Stopped
+    Stopped,
+}
+impl IntoLua for CueRunning {
+    fn into_lua(self, lua: &Lua) -> LuaResult<LuaValue> {
+        Ok(format!("{:?}", self).into_lua(lua)?)
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
@@ -90,7 +113,7 @@ pub struct CueTypeAttributes {
     pub timed_bounded: bool,
     pub networked: Option<bool>,
     pub idempotent: bool,
-    pub tc: bool
+    pub tc: bool,
 }
 impl Default for CueTypeAttributes {
     fn default() -> Self {
@@ -100,7 +123,7 @@ impl Default for CueTypeAttributes {
             timed_bounded: false,
             networked: Some(false),
             idempotent: true,
-            tc: false
+            tc: false,
         }
     }
 }
@@ -108,3 +131,41 @@ impl Default for CueTypeAttributes {
 // For now this is a float of seconds.
 pub type CueTime = f64;
 
+impl LuaUserData for Box<dyn Cue> {
+    fn add_fields<F: LuaUserDataFields<Self>>(fields: &mut F) {
+        // This might get removed depending on if ID storage changes
+        fields.add_field_method_get("id", |_, this| Ok(this.get_id()));
+        // Add method for setting ID
+        fields.add_field_method_get("name", |_, this| Ok(this.get_name()));
+        fields.add_field_method_set("name", |_, this, new_name: String| {
+            Ok(this.set_name(&new_name))
+        });
+        fields.add_field_method_get("type_s", |_, this| Ok(this.type_str_short()));
+        fields.add_field_method_get("type", |_, this| Ok(this.type_str_full()));
+        fields.add_field_method_get("enabled", |_, this| Ok(this.is_enabled()));
+        fields.add_field_method_set("enabled", |_, this, enabled: bool| {
+            Ok(this.set_enabled(enabled))
+        });
+        fields.add_field_method_get("armed", |_, this| Ok(this.is_armed()));
+        fields.add_field_method_set("armed", |_, this, armed: bool| Ok(this.set_armed(armed)));
+        fields.add_field_method_get("errored", |_, this| Ok(this.is_errored()));
+        fields.add_field_method_get("can_fire", |_, this| Ok(this.can_fire()));
+        fields.add_field_method_get("running", |_, this| Ok(this.running()));
+    }
+    fn add_methods<M: LuaUserDataMethods<Self>>(methods: &mut M) {
+        methods.add_method_mut("go", |_, this, ()| Ok(this.go()));
+        methods.add_method_mut("stop", |_, this, ()| Ok(this.stop()));
+        methods.add_method_mut("set_paused", |_, this, x: bool| Ok(this.set_paused(x)));
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum CLIMode {
+    CLI,
+    Lua,
+}
+impl std::fmt::Display for CLIMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}

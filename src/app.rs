@@ -1,5 +1,5 @@
-use crate::data::{Cue, CueList};
-use egui::{TextStyle, RichText};
+use crate::{Cue, CueList};
+use egui::{RichText, TextStyle};
 use egui_extras::{Column, TableBuilder};
 
 const CUE_ID_WIDTH_PX: f32 = 50.;
@@ -54,14 +54,14 @@ impl Project {
 #[derive(Debug)]
 struct InspectorPanel {
     selected_tab: InspectorPanelTabs,
-    id_buf: String
+    id_buf: String,
 }
 
 impl Default for InspectorPanel {
     fn default() -> Self {
         Self {
             selected_tab: InspectorPanelTabs::Basics,
-            id_buf: String::new()
+            id_buf: String::new(),
         }
     }
 }
@@ -157,12 +157,12 @@ fn inspector_panel_body(ui: &mut egui::Ui, project: &mut Project) {
                     ui.horizontal(|ui| {
                         ui.set_width(80.);
                         ui.label("ID:");
-                        let resp = ui.add(egui::TextEdit::singleline(
-                            &mut project.inspector_panel.id_buf)
-                            .font(TextStyle::Monospace)
-                            .desired_width(CUE_ID_WIDTH_PX));
-                        if resp.lost_focus() &&
-                                ui.input(|i| i.key_pressed(egui::Key::Enter)) {
+                        let resp = ui.add(
+                            egui::TextEdit::singleline(&mut project.inspector_panel.id_buf)
+                                .font(TextStyle::Monospace)
+                                .desired_width(CUE_ID_WIDTH_PX),
+                        );
+                        if resp.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
                             cue.set_id(project.inspector_panel.id_buf.as_str());
                         }
                     });
