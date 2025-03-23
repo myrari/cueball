@@ -1,4 +1,5 @@
 use crate::{Cue, CueTypeAttributes};
+use log::debug;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
@@ -34,6 +35,18 @@ impl Cue for RemarkCue {
     }
     fn type_str_short(&self) -> String {
         "Rmk".to_string()
+    }
+    fn go(&mut self) -> () {
+        debug!("Remark {}", self.name)
+    }
+
+    fn with_id(id: String) -> Self
+        where
+            Self: Sized {
+        Self {
+            id,
+            ..Default::default()
+        }
     }
 }
 
@@ -79,6 +92,15 @@ impl Cue for BonkCue {
         let mut a = CueTypeAttributes::default();
         a.runnable = true;
         a
+    }
+
+    fn with_id(id: String) -> Self
+        where
+            Self: Sized {
+        Self {
+            id,
+            ..Default::default()
+        }
     }
 
     fn get_referents(&self) -> Vec<&String> {

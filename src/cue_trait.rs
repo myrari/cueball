@@ -11,9 +11,9 @@ impl CueList {
         Self { list: vec![] }
     }
 
-    pub fn add(&mut self, new_cue: Box<dyn Cue>) -> Result<(), ()> {
+    pub fn add(&mut self, new_cue: impl Cue + 'static) -> Result<(), ()> {
         if self.consistency_checks_add(&new_cue) {
-            self.list.push(new_cue);
+            self.list.push(Box::new(new_cue));
             Ok(())
         } else {
             Err(())
@@ -30,7 +30,25 @@ impl CueList {
         largest_id + 1
     }
 
-    pub fn consistency_checks_add(&self, new_cue: &Box<dyn Cue>) -> bool {
+    pub fn get_cue(&self, id: String) -> Option<&Box<dyn Cue>> {
+        for cue in &self.list {
+            if cue.get_id() == id {
+                return Some(cue);
+            }
+        }
+        None
+    }
+
+    pub fn get_cue_mut(&mut self, id: String) -> Option<&mut Box<dyn Cue>> {
+        for cue in &mut self.list {
+            if cue.get_id() == id {
+                return Some(cue);
+            }
+        }
+        None
+    }
+
+    pub fn consistency_checks_add(&self, new_cue: &impl Cue) -> bool {
         // FIXME: this should also check that all referents exist for
         // instances of CueReferencing.
         self.id_uniqueness_check(&new_cue.get_id())
@@ -73,7 +91,7 @@ pub trait Cue {
         self.is_enabled() && self.is_armed() && !self.is_errored()
     }
 
-    fn go(&mut self) -> () {}
+    fn go(&mut self) -> ();
     fn running(&self) -> CueRunning {
         CueRunning::Stopped
     }
@@ -92,6 +110,17 @@ pub trait Cue {
     fn reset(&mut self) -> Result<(), ()> {
         Err(())
     }
+
+    // offset for playhead after playing this cue meant to be overridden by
+    // group cues or other things that should advance by more than one cue at
+    // a time
+    fn next_offset(&self) -> usize {
+        1
+    }
+
+    fn with_id(id: String) -> Self
+    where
+        Self: Sized;
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]

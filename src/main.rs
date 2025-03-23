@@ -10,11 +10,11 @@ fn main() -> eframe::Result {
         state
             .project
             .cues
-            .add(Box::new(RemarkCue {
+            .add(RemarkCue {
                 id: i.to_string(),
                 name: format!("Cue #{:04}", i),
                 notes: "".to_string(),
-            }))
+            })
             .unwrap();
     }
 

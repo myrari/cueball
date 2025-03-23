@@ -1,6 +1,7 @@
-use crate::{Cue, CueList};
+use crate::{Cue, CueList, RemarkCue};
 use egui::{RichText, TextStyle};
 use egui_extras::{Column, TableBuilder};
+use log::debug;
 
 const CUE_ID_WIDTH_PX: f32 = 50.;
 
@@ -97,8 +98,15 @@ impl eframe::App for CueballApp {
                         ctx.send_viewport_cmd(egui::ViewportCommand::Close);
                     }
                 });
+                // cues menu
+                ui.menu_button("Cues", |ui| {
+                    if ui.button("Remark").clicked() {
+                        let _ = self.state.project.cues.add(RemarkCue::with_id(
+                            self.state.project.cues.get_new_cue_id().to_string(),
+                        ));
+                    }
+                });
             });
-            ui.label("test");
         });
 
         egui::TopBottomPanel::bottom("inspector_panel")
@@ -142,12 +150,16 @@ impl eframe::App for CueballApp {
 }
 
 fn inspector_panel_body(ui: &mut egui::Ui, project: &mut Project) {
+    //let cue = &mut project.cues.list[project.selected_cue.unwrap()];
+    let cue = match project.selected_cue {
+        Some(cue_index) => &mut project.cues.list[cue_index],
+        None => return,
+    };
     ui.horizontal(|ui| {
         //ui.set_min_height(200.);
         ui.set_width(ui.available_width());
         match project.inspector_panel.selected_tab {
             InspectorPanelTabs::Basics => {
-                let cue = &mut project.cues.list[project.selected_cue.unwrap()];
                 // first row
                 ui.horizontal(|ui| {
                     // cue number
@@ -250,7 +262,27 @@ fn cue_list_ui(ui: &mut egui::Ui, project: &mut Project) {
         });
 }
 
-fn handle_go(_project: &mut Project) {
-    // Actual functionality to be added
-    println!("Go!");
+fn handle_go(project: &mut Project) {
+    // get current cue
+    let cue_index = match project.selected_cue {
+        Some(i) => i,
+        None => {
+            debug!("No cue selected for Go");
+            return;
+        }
+    };
+
+    // immutably get cue for next cue index
+    let cue = &project.cues.list[cue_index];
+    let next_cue_index = cue_index + cue.next_offset();
+
+    let cue_mut = &mut project.cues.list[cue_index];
+
+    // play current cue
+    cue_mut.go();
+
+    // advance playhead
+    if let None = project.select_cue(next_cue_index) {
+        project.selected_cue = None;
+    }
 }
