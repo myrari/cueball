@@ -1,4 +1,4 @@
-use crate::{Cue, CueTypeAttributes};
+use crate::{cue_disp::RemarkCueInspector, Cue, CueTypeAttributes, Inspector};
 use log::{debug, info};
 use serde::{Deserialize, Serialize};
 
@@ -43,12 +43,19 @@ impl Cue for RemarkCue {
     }
 
     fn with_id(id: String) -> Self
-        where
-            Self: Sized {
+    where
+        Self: Sized,
+    {
         Self {
             id,
             ..Default::default()
         }
+    }
+
+    fn inspector(&mut self) -> Option<Box<dyn Inspector + '_>> {
+        Some(Box::new(RemarkCueInspector {
+            cue: self,
+        }))
     }
 }
 
@@ -99,8 +106,9 @@ impl Cue for BonkCue {
     }
 
     fn with_id(id: String) -> Self
-        where
-            Self: Sized {
+    where
+        Self: Sized,
+    {
         Self {
             id,
             ..Default::default()

@@ -168,7 +168,7 @@ fn inspector_panel_body(ui: &mut egui::Ui, project: &mut Project) {
         Some(cue_index) => &mut project.cues.list[cue_index],
         None => return,
     };
-    ui.horizontal(|ui| {
+    ui.vertical(|ui| {
         //ui.set_min_height(200.);
         ui.set_width(ui.available_width());
         match project.inspector_panel.selected_tab {
@@ -200,6 +200,9 @@ fn inspector_panel_body(ui: &mut egui::Ui, project: &mut Project) {
                 });
 
                 // second row, for things specifc to a type of cue
+                if let Some(mut cue_inspector) = cue.inspector() {
+                    cue_inspector.basics(ui);
+                }
             }
             InspectorPanelTabs::TimeLoops => {
                 ui.label("time & loops lol");

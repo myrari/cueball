@@ -2,6 +2,8 @@ use mlua::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::cmp::max;
 
+use crate::cue_disp::Inspector;
+
 #[derive(Serialize, Deserialize)]
 pub struct CueList {
     pub list: Vec<Box<dyn Cue>>,
@@ -123,6 +125,10 @@ pub trait Cue {
     fn with_id(id: String) -> Self
     where
         Self: Sized;
+
+    fn inspector(&mut self) -> Option<Box<dyn Inspector + '_>> {
+        None
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
