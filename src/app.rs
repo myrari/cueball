@@ -1,7 +1,8 @@
-use crate::{Cue, CueList, RemarkCue};
+use crate::{cue_imp::BonkCue, Cue, CueList, RemarkCue};
 use egui::{RichText, TextStyle};
 use egui_extras::{Column, TableBuilder};
 use log::debug;
+use serde::{Deserialize, Serialize};
 
 const CUE_ID_WIDTH_PX: f32 = 50.;
 
@@ -30,12 +31,15 @@ pub struct AppState {
     pub project: Project,
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct Project {
     pub name: String,
 
     pub cues: CueList,
 
+    #[serde(skip)]
     selected_cue: Option<usize>,
+    #[serde(skip)]
     inspector_panel: InspectorPanel,
 }
 
@@ -101,9 +105,18 @@ impl eframe::App for CueballApp {
                 // cues menu
                 ui.menu_button("Cues", |ui| {
                     if ui.button("Remark").clicked() {
-                        let _ = self.state.project.cues.add(RemarkCue::with_id(
+                        if let Ok(i) = self.state.project.cues.add(RemarkCue::with_id(
                             self.state.project.cues.get_new_cue_id().to_string(),
-                        ));
+                        )) {
+                            self.state.project.select_cue(i);
+                        }
+                    }
+                    if ui.button("Bonk").clicked() {
+                        if let Ok(i) = self.state.project.cues.add(BonkCue::with_id(
+                            self.state.project.cues.get_new_cue_id().to_string(),
+                        )) {
+                            self.state.project.select_cue(i);
+                        }
                     }
                 });
             });
@@ -160,7 +173,7 @@ fn inspector_panel_body(ui: &mut egui::Ui, project: &mut Project) {
         ui.set_width(ui.available_width());
         match project.inspector_panel.selected_tab {
             InspectorPanelTabs::Basics => {
-                // first row
+                // first row, default things for all cues
                 ui.horizontal(|ui| {
                     // cue number
                     ui.horizontal(|ui| {
@@ -185,6 +198,8 @@ fn inspector_panel_body(ui: &mut egui::Ui, project: &mut Project) {
                         cue.set_name(cue_name.as_str());
                     });
                 });
+
+                // second row, for things specifc to a type of cue
             }
             InspectorPanelTabs::TimeLoops => {
                 ui.label("time & loops lol");

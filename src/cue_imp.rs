@@ -1,5 +1,5 @@
 use crate::{Cue, CueTypeAttributes};
-use log::debug;
+use log::{debug, info};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
@@ -17,6 +17,8 @@ impl Default for RemarkCue {
         }
     }
 }
+
+#[typetag::serde]
 impl Cue for RemarkCue {
     fn get_id(&self) -> String {
         self.id.clone()
@@ -69,6 +71,8 @@ impl Default for BonkCue {
         }
     }
 }
+
+#[typetag::serde]
 impl Cue for BonkCue {
     fn get_id(&self) -> String {
         self.id.clone()
@@ -114,7 +118,7 @@ impl Cue for BonkCue {
         self.enabled = to;
     }
     fn is_armed(&self) -> bool {
-        false
+        self.armed
     }
     fn set_armed(&mut self, to: bool) -> () {
         self.armed = to;
@@ -125,7 +129,7 @@ impl Cue for BonkCue {
 
     fn go(&mut self) -> () {
         if self.can_fire() {
-            println!("bonk #{}", self.ctr);
+            info!("bonk #{}", self.ctr);
             self.ctr += 1;
         }
     }

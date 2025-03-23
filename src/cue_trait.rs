@@ -2,6 +2,7 @@ use mlua::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::cmp::max;
 
+#[derive(Serialize, Deserialize)]
 pub struct CueList {
     pub list: Vec<Box<dyn Cue>>,
 }
@@ -11,10 +12,10 @@ impl CueList {
         Self { list: vec![] }
     }
 
-    pub fn add(&mut self, new_cue: impl Cue + 'static) -> Result<(), ()> {
+    pub fn add(&mut self, new_cue: impl Cue + 'static) -> Result<usize, ()> {
         if self.consistency_checks_add(&new_cue) {
             self.list.push(Box::new(new_cue));
-            Ok(())
+            Ok(self.list.len() - 1)
         } else {
             Err(())
         }
@@ -58,6 +59,7 @@ impl CueList {
     } // FIXME
 }
 
+#[typetag::serde(tag = "type")]
 pub trait Cue {
     fn get_id(&self) -> String;
     fn set_id(&mut self, new_id: &str) -> ();
