@@ -126,7 +126,7 @@ impl eframe::App for CueballApp {
             .resizable(true)
             .show(ctx, |ui| {
                 ui.set_min_height(216.);
-                if let Some(_cue_index) = self.state.project.selected_cue {
+                if let Some(cue_index) = self.state.project.selected_cue {
                     ui.vertical(|ui| {
                         // tab ribbon
                         ui.horizontal(|ui| {
@@ -138,11 +138,16 @@ impl eframe::App for CueballApp {
                                 InspectorPanelTabs::Basics,
                                 "Basics",
                             );
-                            ui.selectable_value(
-                                &mut self.state.project.inspector_panel.selected_tab,
-                                InspectorPanelTabs::TimeLoops,
-                                "Time & Loops",
-                            );
+                            let cue = &mut self.state.project.cues.list[cue_index];
+                            if let Some(mut cue_inspector) = cue.inspector() {
+                                if let Some(_) = cue_inspector.time_and_loops() {
+                                    ui.selectable_value(
+                                        &mut self.state.project.inspector_panel.selected_tab,
+                                        InspectorPanelTabs::TimeLoops,
+                                        "Time & Loops",
+                                    );
+                                }
+                            }
                         });
 
                         // main body
@@ -205,7 +210,11 @@ fn inspector_panel_body(ui: &mut egui::Ui, project: &mut Project) {
                 }
             }
             InspectorPanelTabs::TimeLoops => {
-                ui.label("time & loops lol");
+                if let Some(mut cue_inspector) = cue.inspector() {
+                    if let Some(time_loops_func) = cue_inspector.time_and_loops() {
+                        time_loops_func(ui);
+                    }
+                }
             }
         }
     });
