@@ -1,4 +1,7 @@
-use crate::{cue_disp::RemarkCueInspector, Cue, CueTypeAttributes, Inspector};
+use crate::{
+    cue_disp::{BonkCueInspector, RemarkCueInspector},
+    Cue, CueTypeAttributes, Inspector,
+};
 use log::{debug, info};
 use serde::{Deserialize, Serialize};
 
@@ -53,9 +56,7 @@ impl Cue for RemarkCue {
     }
 
     fn inspector(&mut self) -> Option<Box<dyn Inspector + '_>> {
-        Some(Box::new(RemarkCueInspector {
-            cue: self,
-        }))
+        Some(Box::new(RemarkCueInspector { cue: self }))
     }
 }
 
@@ -65,7 +66,7 @@ pub struct BonkCue {
     name: String,
     enabled: bool,
     armed: bool,
-    ctr: u64,
+    pub ctr: u64,
 }
 impl Default for BonkCue {
     fn default() -> Self {
@@ -144,5 +145,9 @@ impl Cue for BonkCue {
     fn reset(&mut self) -> Result<(), ()> {
         self.ctr = 0;
         Ok(())
+    }
+
+    fn inspector(&mut self) -> Option<Box<dyn Inspector + '_>> {
+        Some(Box::new(BonkCueInspector { cue: self }))
     }
 }

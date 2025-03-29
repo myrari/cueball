@@ -51,6 +51,28 @@ impl CueList {
         None
     }
 
+    pub fn move_cue(&mut self, mve: usize, to: usize) -> () {
+        // move "mve" cue to "to" cue
+        if mve < to {
+            let len = to - mve;
+            // moving down the list
+            let slice = &mut self.list[mve..to + 1];
+            for i in 0..len {
+                let swap_to = len - i;
+                slice.swap(0, swap_to);
+            }
+        } else if mve > to {
+            // moving up the list
+            let len = mve - to;
+            let slice = &mut self.list[to..mve + 1];
+            for i in 0..len {
+                slice.swap(i, len);
+            }
+        } else {
+            // moving cue to itself! do nothing
+        }
+    }
+
     pub fn consistency_checks_add(&self, new_cue: &impl Cue) -> bool {
         // FIXME: this should also check that all referents exist for
         // instances of CueReferencing.

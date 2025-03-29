@@ -40,6 +40,10 @@ pub struct Project {
     #[serde(skip)]
     selected_cue: Option<usize>,
     #[serde(skip)]
+    dragged_cue: Option<usize>,
+    #[serde(skip)]
+    hovered_cue: Option<usize>,
+    #[serde(skip)]
     inspector_panel: InspectorPanel,
 }
 
@@ -83,6 +87,8 @@ impl Default for Project {
             name: String::from("untitled.cueball"),
             cues: CueList::new(),
             selected_cue: None,
+            hovered_cue: None,
+            dragged_cue: None,
             inspector_panel: InspectorPanel::default(),
         }
     }
@@ -228,10 +234,12 @@ fn cue_list_ui(ui: &mut egui::Ui, project: &mut Project) {
         .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
         .min_scrolled_height(0.0)
         .max_scroll_height(scroll_height)
+        .drag_to_scroll(false)
         .column(Column::auto())
         .column(Column::auto())
         .column(Column::remainder())
-        .sense(egui::Sense::click())
+        //.sense(egui::Sense::click())
+        .sense(egui::Sense::click_and_drag())
         .header(20.0, |mut header| {
             header.col(|ui| {
                 ui.set_min_width(CUE_ID_WIDTH_PX);
@@ -245,7 +253,8 @@ fn cue_list_ui(ui: &mut egui::Ui, project: &mut Project) {
             });
         })
         .body(|mut body| {
-            body.ui_mut().input(|inp| {
+            let ui = body.ui_mut();
+            ui.input(|inp| {
                 if let Some(i) = project.selected_cue {
                     if inp.key_pressed(egui::Key::Home) {
                         project.select_cue(0);
@@ -262,8 +271,25 @@ fn cue_list_ui(ui: &mut egui::Ui, project: &mut Project) {
                     if inp.key_pressed(egui::Key::Space) {
                         handle_go(project);
                     }
+                    if inp.pointer.primary_released() {
+                        if let Some(h) = project.hovered_cue {
+                            if let Some(d) = project.dragged_cue {
+                                project.cues.move_cue(d, h);
+                                project.select_cue(h);
+                                //ui.painter().hline(
+                                //    ui.cursor().x_range(),
+                                //    //ui.cursor().top(),
+                                //    18.0 * h as f32 + ui.cursor().top(),
+                                //    (2.0, egui::Color32::WHITE),
+                                //);
+                            }
+                        }
+                    }
                 }
             });
+
+            let mut hovered = false;
+            let mut dragged = false;
             body.rows(18.0, project.cues.list.len(), |mut row| {
                 let i = row.index();
                 let this_selected = Some(i) == project.selected_cue;
@@ -278,14 +304,30 @@ fn cue_list_ui(ui: &mut egui::Ui, project: &mut Project) {
                 row.col(|ui| {
                     ui.label(cue.get_name());
                 });
-                if row.response().clicked() {
+                let response = row.response();
+                if response.clicked() {
                     if this_selected {
                         project.selected_cue = None;
                     } else {
                         project.select_cue(i);
                     }
                 }
+                if response.dragged() {
+                    project.dragged_cue = Some(i);
+                    dragged = true;
+                }
+                if response.contains_pointer() {
+                    project.hovered_cue = Some(i);
+                    hovered = true;
+                }
             });
+
+            if !dragged {
+                project.dragged_cue = None;
+            }
+            if !hovered {
+                project.hovered_cue = None;
+            }
         });
 }
 
