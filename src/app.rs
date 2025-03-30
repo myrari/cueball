@@ -253,8 +253,7 @@ fn cue_list_ui(ui: &mut egui::Ui, project: &mut Project) {
             });
         })
         .body(|mut body| {
-            let ui = body.ui_mut();
-            ui.input(|inp| {
+            body.ui_mut().input(|inp| {
                 if let Some(i) = project.selected_cue {
                     if inp.key_pressed(egui::Key::Home) {
                         project.select_cue(0);
@@ -276,12 +275,6 @@ fn cue_list_ui(ui: &mut egui::Ui, project: &mut Project) {
                             if let Some(d) = project.dragged_cue {
                                 project.cues.move_cue(d, h);
                                 project.select_cue(h);
-                                //ui.painter().hline(
-                                //    ui.cursor().x_range(),
-                                //    //ui.cursor().top(),
-                                //    18.0 * h as f32 + ui.cursor().top(),
-                                //    (2.0, egui::Color32::WHITE),
-                                //);
                             }
                         }
                     }
