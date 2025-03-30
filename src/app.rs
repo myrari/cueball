@@ -227,6 +227,8 @@ fn inspector_panel_body(ui: &mut egui::Ui, project: &mut Project) {
 }
 
 fn cue_list_ui(ui: &mut egui::Ui, project: &mut Project) {
+    let focus = ui.memory(|mem| mem.focused());
+
     let scroll_height = ui.available_height();
     TableBuilder::new(ui)
         .striped(true)
@@ -267,7 +269,7 @@ fn cue_list_ui(ui: &mut egui::Ui, project: &mut Project) {
                     if inp.key_pressed(egui::Key::End) && project.cues.list.len() != 0 {
                         project.select_cue(project.cues.list.len() - 1);
                     }
-                    if inp.key_pressed(egui::Key::Space) {
+                    if inp.key_pressed(egui::Key::Space) && focus.is_none() {
                         handle_go(project);
                     }
                     if inp.pointer.primary_released() {
