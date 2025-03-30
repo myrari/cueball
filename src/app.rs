@@ -1,7 +1,11 @@
+use std::{fs::File, io::BufReader, path::PathBuf};
+
 use crate::{cue_imp::BonkCue, Cue, CueList, RemarkCue};
+use anyhow::anyhow;
 use egui::{RichText, TextStyle};
 use egui_extras::{Column, TableBuilder};
-use log::debug;
+use log::{debug, error};
+use rfd::FileDialog;
 use serde::{Deserialize, Serialize};
 
 const CUE_ID_WIDTH_PX: f32 = 50.;
@@ -34,6 +38,7 @@ pub struct AppState {
 #[derive(Serialize, Deserialize)]
 pub struct Project {
     pub name: String,
+    pub path: Option<PathBuf>,
 
     pub cues: CueList,
 
@@ -84,7 +89,8 @@ enum InspectorPanelTabs {
 impl Default for Project {
     fn default() -> Self {
         Self {
-            name: String::from("untitled.cueball"),
+            name: String::from("Untitled"),
+            path: None,
             cues: CueList::new(),
             selected_cue: None,
             hovered_cue: None,
@@ -96,6 +102,40 @@ impl Default for Project {
 
 impl eframe::App for CueballApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // program-wide keyboard shortcuts
+        ctx.input(|inp| {
+            if inp.modifiers.command {
+                // control-s for save(s)
+                if inp.key_pressed(egui::Key::S) {
+                    if inp.modifiers.shift {
+                        // save-as
+                        self.state.project.path = None;
+                    }
+                    match save_project(&self.state.project) {
+                        Ok(path) => {
+                            self.state.project.path = Some(path);
+                        }
+                        Err(err) => {
+                            error!("Failed to save project: {}", err)
+                        }
+                    }
+                }
+
+                if inp.key_pressed(egui::Key::O) {
+                    if inp.modifiers.ctrl && inp.key_pressed(egui::Key::O) {
+                        match open_project() {
+                            Ok(new_project) => {
+                                self.state.project = new_project;
+                            }
+                            Err(err) => {
+                                error!("Failed to open project: {}", err);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
         // top bar
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             // menu bar
@@ -104,6 +144,44 @@ impl eframe::App for CueballApp {
                 ui.menu_button("File", |ui| {
                     // theme widget
                     egui::widgets::global_theme_preference_buttons(ui);
+
+                    // save & save as buttons
+                    if ui.button("Save").clicked() {
+                        match save_project(&self.state.project) {
+                            Ok(path) => {
+                                self.state.project.path = Some(path);
+                            }
+                            Err(err) => {
+                                error!("Failed to save project: {}", err)
+                            }
+                        }
+                    }
+                    // save as the same as save, but reset project path
+                    if ui.button("Save As").clicked() {
+                        self.state.project.path = None;
+                        match save_project(&self.state.project) {
+                            Ok(path) => {
+                                self.state.project.path = Some(path);
+                            }
+                            Err(err) => {
+                                error!("Failed to save project: {}", err)
+                            }
+                        }
+                    }
+
+                    // open button
+                    if ui.button("Open").clicked() {
+                        match open_project() {
+                            Ok(new_project) => {
+                                self.state.project = new_project;
+                            }
+                            Err(err) => {
+                                error!("Failed to open project: {}", err);
+                            }
+                        }
+                    }
+
+                    // quit button
                     if ui.button("Quit").clicked() {
                         ctx.send_viewport_cmd(egui::ViewportCommand::Close);
                     }
@@ -170,6 +248,50 @@ impl eframe::App for CueballApp {
         egui::CentralPanel::default().show(ctx, |ui| {
             cue_list_ui(ui, &mut self.state.project);
         });
+    }
+}
+
+fn open_project() -> Result<Project, anyhow::Error> {
+    let path = match FileDialog::new()
+        .add_filter("cueball", &["cueball", "cbp"])
+        .pick_file()
+    {
+        None => {
+            return Err(anyhow!("No file path selected!"));
+        }
+        Some(path) => path,
+    };
+
+    let file = File::open(path)?;
+    let reader = BufReader::new(file);
+
+    let project = serde_json::from_reader(reader)?;
+    Ok(project)
+}
+
+fn save_project(project: &Project) -> Result<PathBuf, anyhow::Error> {
+    match &project.path {
+        None => {
+            // pick new save path
+            match FileDialog::new()
+                .set_file_name(project.name.clone())
+                .add_filter("cueball", &["cueball", "cbp"])
+                .save_file()
+            {
+                None => Err(anyhow!("No file save path selected!")),
+                Some(path) => {
+                    let file = File::create(&path)?;
+                    serde_json::to_writer(file, project)?;
+                    Ok(path)
+                }
+            }
+        }
+        Some(path) => {
+            // save path already set
+            let file = File::create(&path)?;
+            serde_json::to_writer(file, project)?;
+            Ok(path.to_path_buf())
+        }
     }
 }
 
