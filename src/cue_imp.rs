@@ -68,7 +68,11 @@ impl Cue for RemarkCue {
 
 impl LuaUserData for RemarkCue {
     fn add_fields<F: LuaUserDataFields<Self>>(fields: &mut F) {
-        add_common_lua_fields(fields)
+        add_common_lua_fields(fields);
+        fields.add_field_method_get("notes", |_, this| Ok(this.notes.clone()));
+        fields.add_field_method_set("notes", |_, this, new_notes: String| {
+            Ok(this.notes = new_notes)
+        });
     }
 
     fn add_methods<M: LuaUserDataMethods<Self>>(methods: &mut M) {
@@ -176,6 +180,10 @@ impl Cue for BonkCue {
 impl LuaUserData for BonkCue {
     fn add_fields<F: LuaUserDataFields<Self>>(fields: &mut F) {
         add_common_lua_fields(fields);
+        fields.add_field_method_get("ctr", |_, this| Ok(this.ctr));
+        fields.add_field_method_set("ctr", |_, this, new_ctr: u64| {
+            Ok(this.ctr = new_ctr)
+        });
     }
 
     fn add_methods<M: LuaUserDataMethods<Self>>(methods: &mut M) {
