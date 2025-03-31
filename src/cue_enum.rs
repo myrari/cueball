@@ -30,7 +30,7 @@ macro_rules! call_cue_enum_inner_matchblock {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
-enum MultitypeCue {
+pub enum MultitypeCue {
     Remark(RemarkCue),
     Bonk(BonkCue),
 }

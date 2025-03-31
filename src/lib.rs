@@ -10,3 +10,4 @@ pub use cue_imp::{RemarkCue, BonkCue};
 pub use cue_trait::{CLIMode, Cue, CueList, CueTime, CueRunning,
     CueTypeAttributes};
 pub use cue_disp::Inspector;
+pub use cue_enum::MultitypeCue;
