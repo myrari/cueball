@@ -214,6 +214,32 @@ impl LuaUserData for Box<dyn Cue> {
     }
 }
 
+pub fn add_common_lua_fields<Q: Cue, F: LuaUserDataFields<Q>>(fields: &mut F) {
+    // This might get removed depending on if ID storage changes
+    fields.add_field_method_get("id", |_, this| Ok(this.get_id()));
+    // Add method for setting ID
+    fields.add_field_method_get("name", |_, this| Ok(this.get_name()));
+    fields.add_field_method_set("name", |_, this, new_name: String| {
+        Ok(this.set_name(&new_name))
+    });
+    fields.add_field_method_get("type_s", |_, this| Ok(this.type_str_short()));
+    fields.add_field_method_get("type", |_, this| Ok(this.type_str_full()));
+    fields.add_field_method_get("enabled", |_, this| Ok(this.is_enabled()));
+    fields.add_field_method_set("enabled", |_, this, enabled: bool| {
+        Ok(this.set_enabled(enabled))
+    });
+    fields.add_field_method_get("armed", |_, this| Ok(this.is_armed()));
+    fields.add_field_method_set("armed", |_, this, armed: bool| Ok(this.set_armed(armed)));
+    fields.add_field_method_get("errored", |_, this| Ok(this.is_errored()));
+    fields.add_field_method_get("can_fire", |_, this| Ok(this.can_fire()));
+    fields.add_field_method_get("running", |_, this| Ok(this.running()));
+}
+pub fn add_common_lua_methods<Q: Cue, M: LuaUserDataMethods<Q>>(methods: &mut M) {
+    methods.add_method_mut("go", |_, this, ()| Ok(this.go()));
+    methods.add_method_mut("stop", |_, this, ()| Ok(this.stop()));
+    methods.add_method_mut("set_paused", |_, this, x: bool| Ok(this.set_paused(x)));
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum CLIMode {
     CLI,
