@@ -1,5 +1,5 @@
 use crate::{Cue, RemarkCue, BonkCue, CueTime, CueRunning, CueTypeAttributes,
-    Inspector, add_common_lua_fields, add_common_lua_methods};
+    Inspector};
 use mlua::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -62,9 +62,6 @@ impl Cue for MultitypeCue {
 
 impl IntoLua for MultitypeCue {
     fn into_lua(self, lua: &Lua) -> LuaResult<LuaValue> {
-        match self {
-            MultitypeCue::Bonk(c) => c.into_lua(lua),
-            MultitypeCue::Remark(c) => c.into_lua(lua),
-        }
+        call_cue_enum_inner_matchblock!(self, into_lua, lua)
     }
 }
