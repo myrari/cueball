@@ -1,10 +1,12 @@
-use cueball::{cueball_cli, CLIMode, Cue, RemarkCue};
+use cueball::{cueball_cli, CLIMode, RemarkCue, BonkCue, MultitypeCue};
 use mlua::prelude::*;
 
 fn main() -> Result<(), ()> {
     let lua = Lua::new();
-    let test_cue: Box<dyn Cue> = Box::new(RemarkCue::default());
-    lua.globals().set("test_cue", test_cue).unwrap();
+    lua.globals().set("remk_cue", RemarkCue::default()).unwrap();
+    lua.globals().set("bonk_cue", BonkCue::default()).unwrap();
+    lua.globals().set("cuevec", vec![MultitypeCue::Bonk(BonkCue::default()),
+        MultitypeCue::Remark(RemarkCue::default())]).unwrap();
 
     cueball_cli(CLIMode::Lua, lua)
 }
