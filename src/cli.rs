@@ -1,6 +1,7 @@
 use crate::cue_trait::CLIMode;
 use mlua::prelude::*;
 use reedline::{DefaultPrompt, DefaultPromptSegment, Reedline, Signal};
+use log::{LevelFilter, debug, warn, error};
 
 fn print_help_menu() {
     println!("Help menu:");
@@ -16,6 +17,14 @@ pub fn cueball_cli(initial_mode: CLIMode, lua: Lua) -> Result<(), ()> {
     let mut line_editor_cli = Reedline::create();
     let mut line_editor_lua = Reedline::create();
     let mut mode = initial_mode;
+
+    env_logger::builder()
+        .filter_level(LevelFilter::Info)
+        .parse_default_env()
+        .init();
+
+    lua.set_warning_function(|_lua, warnstr, _incomplete|
+        Ok(warn!("{}", warnstr)));
 
     loop {
         let line_editor = match mode {
@@ -39,7 +48,7 @@ pub fn cueball_cli(initial_mode: CLIMode, lua: Lua) -> Result<(), ()> {
                     "" => (),
                     _ => match mode {
                         CLIMode::CLI => {
-                            println!("Unknown CLI command! Try /help");
+                            error!("Unknown CLI command! Try /help");
                         }
                         CLIMode::Lua => {
                             match lua.load(inp).eval::<LuaMultiValue>() {
@@ -54,8 +63,7 @@ pub fn cueball_cli(initial_mode: CLIMode, lua: Lua) -> Result<(), ()> {
                                         )
                                     }
                                 }
-                                // Switch to Log
-                                Err(err) => println!("Error: {:?}", err),
+                                Err(err) => error!("{}", err),
                             }
                         }
                     },
@@ -65,7 +73,7 @@ pub fn cueball_cli(initial_mode: CLIMode, lua: Lua) -> Result<(), ()> {
                 break;
             }
             x => {
-                println!("Event: {:?}", x);
+                debug!("Event: {:?}", x);
             }
         }
     }
