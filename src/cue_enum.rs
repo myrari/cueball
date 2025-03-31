@@ -1,5 +1,6 @@
 use crate::{Cue, RemarkCue, BonkCue, CueTime, CueRunning, CueTypeAttributes,
-    Inspector};
+    Inspector, add_common_lua_fields, add_common_lua_methods};
+use mlua::prelude::*;
 use serde::{Deserialize, Serialize};
 
 macro_rules! call_cue_enum_inner {
@@ -9,11 +10,6 @@ macro_rules! call_cue_enum_inner {
         }
     };
     (fn $method:ident(&mut self $(,$x:ident: $t:ty),*) -> $ret:ty $(;)? $($_:block)?) => {
-        fn $method(&mut self, $($x: $t)*) -> $ret {
-            call_cue_enum_inner_matchblock!(self, $method, $($x)*)
-        }
-    };
-    (fn $method:ident($(,$x:ident: $t:ty),*) -> $ret:ty $(;)? $($_:block)?) => {
         fn $method(&mut self, $($x: $t)*) -> $ret {
             call_cue_enum_inner_matchblock!(self, $method, $($x)*)
         }
@@ -64,3 +60,11 @@ impl Cue for MultitypeCue {
     call_cue_enum_inner!(fn inspector(&mut self) -> Option<Box<dyn Inspector + '_>>;);
 }
 
+impl IntoLua for MultitypeCue {
+    fn into_lua(self, lua: &Lua) -> LuaResult<LuaValue> {
+        match self {
+            MultitypeCue::Bonk(c) => c.into_lua(lua),
+            MultitypeCue::Remark(c) => c.into_lua(lua),
+        }
+    }
+}
