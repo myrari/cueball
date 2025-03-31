@@ -144,10 +144,6 @@ pub trait Cue {
         1
     }
 
-    fn with_id(id: String) -> Self
-    where
-        Self: Sized;
-
     fn inspector(&mut self) -> Option<Box<dyn Inspector + '_>> {
         None
     }

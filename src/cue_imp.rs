@@ -11,6 +11,20 @@ pub struct RemarkCue {
     pub name: String,
     pub notes: String,
 }
+
+impl RemarkCue {
+    pub fn with_id(id: String) -> Self
+    where
+        Self: Sized,
+    {
+        Self {
+            id,
+            ..Default::default()
+        }
+    }
+
+}
+
 impl Default for RemarkCue {
     fn default() -> Self {
         RemarkCue {
@@ -45,20 +59,11 @@ impl Cue for RemarkCue {
         debug!("Remark {}", self.name)
     }
 
-    fn with_id(id: String) -> Self
-    where
-        Self: Sized,
-    {
-        Self {
-            id,
-            ..Default::default()
-        }
-    }
-
     fn inspector(&mut self) -> Option<Box<dyn Inspector + '_>> {
         Some(Box::new(RemarkCueInspector { cue: self }))
     }
 }
+
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct BonkCue {
@@ -68,6 +73,20 @@ pub struct BonkCue {
     armed: bool,
     pub ctr: u64,
 }
+
+impl BonkCue {
+    pub fn with_id(id: String) -> Self
+    where
+        Self: Sized,
+    {
+        Self {
+            id,
+            ..Default::default()
+        }
+    }
+
+}
+
 impl Default for BonkCue {
     fn default() -> Self {
         BonkCue {
@@ -104,16 +123,6 @@ impl Cue for BonkCue {
         let mut a = CueTypeAttributes::default();
         a.runnable = true;
         a
-    }
-
-    fn with_id(id: String) -> Self
-    where
-        Self: Sized,
-    {
-        Self {
-            id,
-            ..Default::default()
-        }
     }
 
     fn get_referents(&self) -> Vec<&String> {
