@@ -1,7 +1,9 @@
 use crate::{
     cue_disp::{BonkCueInspector, RemarkCueInspector},
     Cue, CueTypeAttributes, Inspector,
+    add_common_lua_fields, add_common_lua_methods,
 };
+use mlua::prelude::*;
 use log::{debug, info};
 use serde::{Deserialize, Serialize};
 
@@ -61,6 +63,16 @@ impl Cue for RemarkCue {
 
     fn inspector(&mut self) -> Option<Box<dyn Inspector + '_>> {
         Some(Box::new(RemarkCueInspector { cue: self }))
+    }
+}
+
+impl LuaUserData for RemarkCue {
+    fn add_fields<F: LuaUserDataFields<Self>>(fields: &mut F) {
+        add_common_lua_fields(fields)
+    }
+
+    fn add_methods<M: LuaUserDataMethods<Self>>(methods: &mut M) {
+        add_common_lua_methods(methods)
     }
 }
 
@@ -158,5 +170,15 @@ impl Cue for BonkCue {
 
     fn inspector(&mut self) -> Option<Box<dyn Inspector + '_>> {
         Some(Box::new(BonkCueInspector { cue: self }))
+    }
+}
+
+impl LuaUserData for BonkCue {
+    fn add_fields<F: LuaUserDataFields<Self>>(fields: &mut F) {
+        add_common_lua_fields(fields);
+    }
+
+    fn add_methods<M: LuaUserDataMethods<Self>>(methods: &mut M) {
+        add_common_lua_methods(methods)
     }
 }
