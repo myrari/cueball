@@ -1,10 +1,6 @@
-use crate::{
-    cue_disp::{BonkCueInspector, RemarkCueInspector},
-    Cue, CueTypeAttributes, Inspector,
-    add_common_lua_fields, add_common_lua_methods,
-};
-use mlua::prelude::*;
+use crate::{add_common_lua_fields, add_common_lua_methods, Cue, CueTypeAttributes};
 use log::{debug, info};
+use mlua::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
@@ -24,7 +20,6 @@ impl RemarkCue {
             ..Default::default()
         }
     }
-
 }
 
 impl Default for RemarkCue {
@@ -60,10 +55,6 @@ impl Cue for RemarkCue {
     fn go(&mut self) -> () {
         debug!("Remark {}", self.name)
     }
-
-    fn inspector(&mut self) -> Option<Box<dyn Inspector + '_>> {
-        Some(Box::new(RemarkCueInspector { cue: self }))
-    }
 }
 
 impl LuaUserData for RemarkCue {
@@ -79,7 +70,6 @@ impl LuaUserData for RemarkCue {
         add_common_lua_methods(methods)
     }
 }
-
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct BonkCue {
@@ -100,7 +90,6 @@ impl BonkCue {
             ..Default::default()
         }
     }
-
 }
 
 impl Default for BonkCue {
@@ -171,19 +160,13 @@ impl Cue for BonkCue {
         self.ctr = 0;
         Ok(())
     }
-
-    fn inspector(&mut self) -> Option<Box<dyn Inspector + '_>> {
-        Some(Box::new(BonkCueInspector { cue: self }))
-    }
 }
 
 impl LuaUserData for BonkCue {
     fn add_fields<F: LuaUserDataFields<Self>>(fields: &mut F) {
         add_common_lua_fields(fields);
         fields.add_field_method_get("ctr", |_, this| Ok(this.ctr));
-        fields.add_field_method_set("ctr", |_, this, new_ctr: u64| {
-            Ok(this.ctr = new_ctr)
-        });
+        fields.add_field_method_set("ctr", |_, this, new_ctr: u64| Ok(this.ctr = new_ctr));
     }
 
     fn add_methods<M: LuaUserDataMethods<Self>>(methods: &mut M) {

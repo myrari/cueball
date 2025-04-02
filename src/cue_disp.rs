@@ -1,6 +1,6 @@
-use crate::{cue_imp::BonkCue, RemarkCue};
+use crate::{cue_imp::BonkCue, MultitypeCue, RemarkCue};
 
-pub trait Inspector {
+pub trait CueInspector {
     // unique because ALL cues will show basics tab
     fn basics(&mut self, _ui: &mut egui::Ui) -> () {
         ()
@@ -11,12 +11,19 @@ pub trait Inspector {
     }
 }
 
+pub fn get_cue_inspector(cue: &mut MultitypeCue) -> Option<Box<dyn CueInspector + '_>> {
+    match cue {
+        MultitypeCue::Remark(ref mut q) => Some(Box::new(RemarkCueInspector { cue: q })),
+        MultitypeCue::Bonk(ref mut q) => Some(Box::new(BonkCueInspector { cue: q })),
+    }
+}
+
 #[derive(Debug)]
 pub struct RemarkCueInspector<'a> {
     pub cue: &'a mut RemarkCue,
 }
 
-impl Inspector for RemarkCueInspector<'_> {
+impl CueInspector for RemarkCueInspector<'_> {
     fn basics(&mut self, ui: &mut egui::Ui) -> () {
         ui.horizontal(|ui| {
             ui.label("Notes: ");
@@ -36,7 +43,7 @@ pub struct BonkCueInspector<'a> {
     pub cue: &'a mut BonkCue,
 }
 
-impl Inspector for BonkCueInspector<'_> {
+impl CueInspector for BonkCueInspector<'_> {
     fn basics(&mut self, ui: &mut egui::Ui) -> () {
         ui.horizontal(|ui| {
             ui.label("Bonk count: ");

@@ -9,5 +9,5 @@ pub use cli::cueball_cli;
 pub use cue_imp::{RemarkCue, BonkCue};
 pub use cue_trait::{CLIMode, Cue, CueList, CueTime, CueRunning,
     CueTypeAttributes, add_common_lua_fields, add_common_lua_methods};
-pub use cue_disp::Inspector;
 pub use cue_enum::MultitypeCue;
+pub use cue_disp::get_cue_inspector;

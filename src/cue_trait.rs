@@ -2,7 +2,7 @@ use mlua::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::cmp::max;
 
-use crate::{cue_disp::Inspector, MultitypeCue};
+use crate::MultitypeCue;
 
 #[derive(Serialize, Deserialize)]
 pub struct CueList {
@@ -142,10 +142,6 @@ pub trait Cue {
     // a time
     fn next_offset(&self) -> usize {
         1
-    }
-
-    fn inspector(&mut self) -> Option<Box<dyn Inspector + '_>> {
-        None
     }
 }
 

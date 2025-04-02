@@ -1,6 +1,6 @@
 use std::{fs::File, io::BufReader, path::PathBuf};
 
-use crate::{cue_imp::BonkCue, Cue, CueList, MultitypeCue, RemarkCue};
+use crate::{cue_imp::BonkCue, get_cue_inspector, Cue, CueList, MultitypeCue, RemarkCue};
 use anyhow::anyhow;
 use egui::{RichText, TextStyle};
 use egui_extras::{Column, TableBuilder};
@@ -233,7 +233,7 @@ impl eframe::App for CueballApp {
                                 "Basics",
                             );
                             let cue = &mut self.state.project.cues.list[cue_index];
-                            if let Some(mut cue_inspector) = cue.inspector() {
+                            if let Some(mut cue_inspector) = get_cue_inspector(cue) {
                                 if let Some(_) = cue_inspector.time_and_loops() {
                                     ui.selectable_value(
                                         &mut self.state.project.inspector_panel.selected_tab,
@@ -343,12 +343,12 @@ fn inspector_panel_body(ui: &mut egui::Ui, project: &mut Project) {
                 });
 
                 // second row, for things specifc to a type of cue
-                if let Some(mut cue_inspector) = cue.inspector() {
+                if let Some(mut cue_inspector) = get_cue_inspector(cue) {
                     cue_inspector.basics(ui);
                 }
             }
             InspectorPanelTabs::TimeLoops => {
-                if let Some(mut cue_inspector) = cue.inspector() {
+                if let Some(mut cue_inspector) = get_cue_inspector(cue) {
                     if let Some(time_loops_func) = cue_inspector.time_and_loops() {
                         time_loops_func(ui);
                     }
