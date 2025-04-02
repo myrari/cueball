@@ -1,6 +1,6 @@
 use std::{fs::File, io::BufReader, path::PathBuf};
 
-use crate::{cue_imp::BonkCue, Cue, CueList, RemarkCue};
+use crate::{cue_imp::BonkCue, Cue, CueList, MultitypeCue, RemarkCue};
 use anyhow::anyhow;
 use egui::{RichText, TextStyle};
 use egui_extras::{Column, TableBuilder};
@@ -53,7 +53,7 @@ pub struct Project {
 }
 
 impl Project {
-    fn select_cue(&mut self, new_cue_index: usize) -> Option<&Box<dyn Cue>> {
+    fn select_cue(&mut self, new_cue_index: usize) -> Option<&MultitypeCue> {
         if new_cue_index < self.cues.list.len() {
             let new_cue = &self.cues.list[new_cue_index];
             self.selected_cue = Some(new_cue_index);
@@ -189,16 +189,26 @@ impl eframe::App for CueballApp {
                 // cues menu
                 ui.menu_button("Cues", |ui| {
                     if ui.button("Remark").clicked() {
-                        if let Ok(i) = self.state.project.cues.add(RemarkCue::with_id(
-                            self.state.project.cues.get_new_cue_id().to_string(),
-                        )) {
+                        if let Ok(i) =
+                            self.state
+                                .project
+                                .cues
+                                .add(MultitypeCue::Remark(RemarkCue::with_id(
+                                    self.state.project.cues.get_new_cue_id().to_string(),
+                                )))
+                        {
                             self.state.project.select_cue(i);
                         }
                     }
                     if ui.button("Bonk").clicked() {
-                        if let Ok(i) = self.state.project.cues.add(BonkCue::with_id(
-                            self.state.project.cues.get_new_cue_id().to_string(),
-                        )) {
+                        if let Ok(i) =
+                            self.state
+                                .project
+                                .cues
+                                .add(MultitypeCue::Bonk(BonkCue::with_id(
+                                    self.state.project.cues.get_new_cue_id().to_string(),
+                                )))
+                        {
                             self.state.project.select_cue(i);
                         }
                     }

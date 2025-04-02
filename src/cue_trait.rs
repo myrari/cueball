@@ -2,11 +2,11 @@ use mlua::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::cmp::max;
 
-use crate::cue_disp::Inspector;
+use crate::{cue_disp::Inspector, MultitypeCue};
 
 #[derive(Serialize, Deserialize)]
 pub struct CueList {
-    pub list: Vec<Box<dyn Cue>>,
+    pub list: Vec<MultitypeCue>,
 }
 
 impl CueList {
@@ -14,9 +14,9 @@ impl CueList {
         Self { list: vec![] }
     }
 
-    pub fn add(&mut self, new_cue: impl Cue + 'static) -> Result<usize, ()> {
+    pub fn add(&mut self, new_cue: MultitypeCue) -> Result<usize, ()> {
         if self.consistency_checks_add(&new_cue) {
-            self.list.push(Box::new(new_cue));
+            self.list.push(new_cue);
             Ok(self.list.len() - 1)
         } else {
             Err(())
@@ -33,7 +33,7 @@ impl CueList {
         largest_id + 1
     }
 
-    pub fn get_cue(&self, id: String) -> Option<&Box<dyn Cue>> {
+    pub fn get_cue(&self, id: String) -> Option<&MultitypeCue> {
         for cue in &self.list {
             if cue.get_id() == id {
                 return Some(cue);
@@ -42,7 +42,7 @@ impl CueList {
         None
     }
 
-    pub fn get_cue_mut(&mut self, id: String) -> Option<&mut Box<dyn Cue>> {
+    pub fn get_cue_mut(&mut self, id: String) -> Option<&mut MultitypeCue> {
         for cue in &mut self.list {
             if cue.get_id() == id {
                 return Some(cue);
