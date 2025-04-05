@@ -69,6 +69,68 @@ macro_rules! call_cue_enum_inner_matchblock {
     }
 }
 
+#[typetag::serde(tag = "type")]
+pub trait Cue {
+    fn get_id(&self) -> String;
+    fn set_id(&mut self, new_id: &str) -> ();
+    fn get_id_num(&self) -> Option<u64> {
+        self.get_id().parse::<u64>().ok()
+    }
+    fn get_name(&self) -> String;
+    fn set_name(&mut self, new_name: &str) -> ();
+    fn type_str_full(&self) -> String;
+    fn type_str_short(&self) -> String;
+    fn get_attributes(&self) -> CueTypeAttributes {
+        CueTypeAttributes::default()
+    }
+
+    fn get_referents(&self) -> Vec<&String> {
+        Vec::new()
+    }
+
+    fn is_enabled(&self) -> bool {
+        false
+    }
+    fn set_enabled(&mut self, _to: bool) -> () {}
+    fn is_armed(&self) -> bool {
+        false
+    }
+    fn set_armed(&mut self, _to: bool) -> () {}
+    fn is_errored(&self) -> bool {
+        false
+    }
+    fn can_fire(&self) -> bool {
+        self.is_enabled() && self.is_armed() && !self.is_errored()
+    }
+
+    fn go(&mut self) -> ();
+    fn running(&self) -> CueRunning {
+        CueRunning::Stopped
+    }
+    fn stop(&mut self) -> () {}
+    fn set_paused(&mut self, _pu: bool) -> () {}
+
+    fn length(&self) -> Option<CueTime> {
+        None
+    }
+    fn elapsed(&self) -> Option<CueTime> {
+        None
+    }
+    fn remaining(&self) -> Option<CueTime> {
+        None
+    }
+    fn reset(&mut self) -> Result<(), ()> {
+        Err(())
+    }
+
+    // offset for playhead after playing this cue meant to be overridden by
+    // group cues or other things that should advance by more than one cue at
+    // a time
+    fn next_offset(&self) -> usize {
+        1
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
 pub enum MultitypeCue {
     // modify this when adding/deleting cues
@@ -160,7 +222,7 @@ impl IntoLua for MultitypeCue {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Project {
     pub name: String,
     pub path: Option<PathBuf>,
@@ -168,7 +230,17 @@ pub struct Project {
     pub cues: CueList,
 }
 
-#[derive(Serialize, Deserialize)]
+impl Default for Project {
+    fn default() -> Self {
+        Self {
+            name: String::from("Untitled"),
+            path: None,
+            cues: CueList::new(),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct CueList {
     pub list: Vec<MultitypeCue>,
 }
@@ -245,68 +317,6 @@ impl CueList {
     fn id_uniqueness_check(&self, _new_id: &String) -> bool {
         true
     } // FIXME
-}
-
-#[typetag::serde(tag = "type")]
-pub trait Cue {
-    fn get_id(&self) -> String;
-    fn set_id(&mut self, new_id: &str) -> ();
-    fn get_id_num(&self) -> Option<u64> {
-        self.get_id().parse::<u64>().ok()
-    }
-    fn get_name(&self) -> String;
-    fn set_name(&mut self, new_name: &str) -> ();
-    fn type_str_full(&self) -> String;
-    fn type_str_short(&self) -> String;
-    fn get_attributes(&self) -> CueTypeAttributes {
-        CueTypeAttributes::default()
-    }
-
-    fn get_referents(&self) -> Vec<&String> {
-        Vec::new()
-    }
-
-    fn is_enabled(&self) -> bool {
-        false
-    }
-    fn set_enabled(&mut self, _to: bool) -> () {}
-    fn is_armed(&self) -> bool {
-        false
-    }
-    fn set_armed(&mut self, _to: bool) -> () {}
-    fn is_errored(&self) -> bool {
-        false
-    }
-    fn can_fire(&self) -> bool {
-        self.is_enabled() && self.is_armed() && !self.is_errored()
-    }
-
-    fn go(&mut self) -> ();
-    fn running(&self) -> CueRunning {
-        CueRunning::Stopped
-    }
-    fn stop(&mut self) -> () {}
-    fn set_paused(&mut self, _pu: bool) -> () {}
-
-    fn length(&self) -> Option<CueTime> {
-        None
-    }
-    fn elapsed(&self) -> Option<CueTime> {
-        None
-    }
-    fn remaining(&self) -> Option<CueTime> {
-        None
-    }
-    fn reset(&mut self) -> Result<(), ()> {
-        Err(())
-    }
-
-    // offset for playhead after playing this cue meant to be overridden by
-    // group cues or other things that should advance by more than one cue at
-    // a time
-    fn next_offset(&self) -> usize {
-        1
-    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]

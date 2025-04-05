@@ -4,7 +4,7 @@ use std::{fs::File, io::BufReader, path::PathBuf};
 
 use crate::{
     cues::{AudioCue, BonkCue, RemarkCue},
-    Cue, CueList, MultitypeCue, Project,
+    Cue, MultitypeCue, Project,
 };
 use anyhow::anyhow;
 use egui::{RichText, TextStyle};
@@ -80,16 +80,6 @@ impl Default for InspectorPanel {
 enum InspectorPanelTabs {
     Basics,
     TimeLoops,
-}
-
-impl Default for Project {
-    fn default() -> Self {
-        Self {
-            name: String::from("Untitled"),
-            path: None,
-            cues: CueList::new(),
-        }
-    }
 }
 
 impl eframe::App for CueballApp {

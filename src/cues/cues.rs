@@ -2,12 +2,16 @@ use log::{debug, info};
 use mlua::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use super::{add_common_lua_fields, add_common_lua_methods, Cue, CueTypeAttributes};
+use super::{
+    add_common_lua_fields, add_common_lua_methods, Cue, CueTypeAttributes,
+};
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct AudioCue {
     pub id: String,
     pub name: String,
+
+    pub file_path: String,
 }
 
 impl AudioCue {
@@ -15,6 +19,7 @@ impl AudioCue {
         Self {
             id,
             name: "New audio cue".into(),
+            file_path: "".into(),
         }
     }
 }
