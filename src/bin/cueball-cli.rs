@@ -1,4 +1,4 @@
-use cueball::{cueball_cli, CLIMode};
+use cueball::{cli::cueball_cli, cli::CLIMode};
 use mlua::prelude::*;
 
 fn main() -> Result<(), ()> {

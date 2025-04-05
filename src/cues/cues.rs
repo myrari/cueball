@@ -1,7 +1,8 @@
-use crate::{add_common_lua_fields, add_common_lua_methods, Cue, CueTypeAttributes};
 use log::{debug, info};
 use mlua::prelude::*;
 use serde::{Deserialize, Serialize};
+
+use super::{add_common_lua_fields, add_common_lua_methods, Cue, CueTypeAttributes};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct RemarkCue {

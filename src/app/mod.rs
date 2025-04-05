@@ -1,9 +1,15 @@
+pub mod inspector;
+
 use std::{fs::File, io::BufReader, path::PathBuf};
 
-use crate::{cue_imp::BonkCue, get_cue_inspector, Cue, CueList, MultitypeCue, RemarkCue};
+use crate::{
+    cues::{BonkCue, RemarkCue},
+    Cue, CueList, MultitypeCue,
+};
 use anyhow::anyhow;
 use egui::{RichText, TextStyle};
 use egui_extras::{Column, TableBuilder};
+use inspector::get_cue_inspector;
 use log::{debug, error};
 use rfd::FileDialog;
 use serde::{Deserialize, Serialize};

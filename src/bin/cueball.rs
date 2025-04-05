@@ -1,8 +1,10 @@
+use cueball::app::{AppState, CueballApp, Project};
+
 fn main() -> eframe::Result {
     env_logger::init();
 
-    let state = cueball::AppState {
-        project: cueball::Project::default(),
+    let state = AppState {
+        project: Project::default(),
     };
 
     eframe::run_native(
@@ -11,6 +13,6 @@ fn main() -> eframe::Result {
             viewport: egui::ViewportBuilder::default(),
             ..Default::default()
         },
-        Box::new(|cc| Ok(Box::new(cueball::CueballApp::new(cc, state)))),
+        Box::new(|cc| Ok(Box::new(CueballApp::new(cc, state)))),
     )
 }

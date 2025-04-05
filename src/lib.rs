@@ -1,13 +1,6 @@
-mod app;
-mod cli;
-mod cue_imp;
-mod cue_trait;
-mod cue_disp;
-mod cue_enum;
-pub use app::{AppState, CueballApp, Project};
-pub use cli::cueball_cli;
-pub use cue_imp::{RemarkCue, BonkCue};
-pub use cue_trait::{CLIMode, Cue, CueList, CueTime, CueRunning,
-    CueTypeAttributes, add_common_lua_fields, add_common_lua_methods};
-pub use cue_enum::MultitypeCue;
-pub use cue_disp::get_cue_inspector;
+pub mod app;
+pub mod cli;
+pub mod cues;
+
+// these types are in the cues module, but we want to display them as public
+pub use cues::{Cue, CueList, MultitypeCue};

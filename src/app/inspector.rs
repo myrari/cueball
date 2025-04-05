@@ -1,4 +1,7 @@
-use crate::{cue_imp::BonkCue, MultitypeCue, RemarkCue};
+use crate::{
+    cues::{BonkCue, RemarkCue},
+    MultitypeCue,
+};
 
 pub trait CueInspector {
     // unique because ALL cues will show basics tab
