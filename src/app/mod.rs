@@ -3,7 +3,7 @@ pub mod inspector;
 use std::{fs::File, io::BufReader, path::PathBuf};
 
 use crate::{
-    cues::{BonkCue, RemarkCue},
+    cues::{BonkCue, RemarkCue, AudioCue},
     Cue, CueList, MultitypeCue,
 };
 use anyhow::anyhow;
@@ -194,6 +194,18 @@ impl eframe::App for CueballApp {
                 });
                 // cues menu
                 ui.menu_button("Cues", |ui| {
+                    if ui.button("Audio").clicked() {
+                        if let Ok(i) =
+                            self.state
+                                .project
+                                .cues
+                                .add(MultitypeCue::Audio(AudioCue::with_id(
+                                    self.state.project.cues.get_new_cue_id().to_string(),
+                                )))
+                        {
+                            self.state.project.select_cue(i);
+                        }
+                    }
                     if ui.button("Remark").clicked() {
                         if let Ok(i) =
                             self.state

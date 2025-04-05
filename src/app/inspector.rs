@@ -18,6 +18,7 @@ pub fn get_cue_inspector(cue: &mut MultitypeCue) -> Option<Box<dyn CueInspector 
     match cue {
         MultitypeCue::Remark(ref mut q) => Some(Box::new(RemarkCueInspector { cue: q })),
         MultitypeCue::Bonk(ref mut q) => Some(Box::new(BonkCueInspector { cue: q })),
+        _ => None,
     }
 }
 

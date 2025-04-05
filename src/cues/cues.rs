@@ -4,6 +4,56 @@ use serde::{Deserialize, Serialize};
 
 use super::{add_common_lua_fields, add_common_lua_methods, Cue, CueTypeAttributes};
 
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct AudioCue {
+    pub id: String,
+    pub name: String,
+}
+
+impl AudioCue {
+    pub fn with_id(id: String) -> Self {
+        Self {
+            id,
+            name: "New audio cue".into(),
+        }
+    }
+}
+
+#[typetag::serde]
+impl Cue for AudioCue {
+    fn get_id(&self) -> String {
+        self.id.clone()
+    }
+    fn get_name(&self) -> String {
+        self.name.clone()
+    }
+    fn set_id(&mut self, new_id: &str) -> () {
+        self.id = new_id.to_string();
+    }
+    fn set_name(&mut self, new_name: &str) -> () {
+        self.name = new_name.to_string();
+    }
+    fn type_str_full(&self) -> String {
+        "Audio".to_string()
+    }
+    fn type_str_short(&self) -> String {
+        "Aud".to_string()
+    }
+    fn go(&mut self) -> () {
+        debug!("Audio {}", self.name)
+    }
+}
+
+impl LuaUserData for AudioCue {
+    fn add_fields<F: LuaUserDataFields<Self>>(fields: &mut F) {
+        add_common_lua_fields(fields);
+    }
+
+    fn add_methods<M: LuaUserDataMethods<Self>>(methods: &mut M) {
+        add_common_lua_methods(methods)
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct RemarkCue {
     pub id: String,
@@ -12,21 +62,9 @@ pub struct RemarkCue {
 }
 
 impl RemarkCue {
-    pub fn with_id(id: String) -> Self
-    where
-        Self: Sized,
-    {
+    pub fn with_id(id: impl Into<String>) -> Self {
         Self {
-            id,
-            ..Default::default()
-        }
-    }
-}
-
-impl Default for RemarkCue {
-    fn default() -> Self {
-        RemarkCue {
-            id: "0".to_string(),
+            id: id.into(),
             name: "New remark cue".to_string(),
             notes: "".to_string(),
         }
@@ -82,21 +120,9 @@ pub struct BonkCue {
 }
 
 impl BonkCue {
-    pub fn with_id(id: String) -> Self
-    where
-        Self: Sized,
-    {
+    pub fn with_id(id: impl Into<String>) -> Self {
         Self {
-            id,
-            ..Default::default()
-        }
-    }
-}
-
-impl Default for BonkCue {
-    fn default() -> Self {
-        BonkCue {
-            id: "0".to_string(),
+            id: id.into(),
             name: "New bonk cue".to_string(),
             ctr: 0,
             enabled: true,

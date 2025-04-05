@@ -1,6 +1,6 @@
 mod cues;
 
-pub use cues::{BonkCue, RemarkCue};
+pub use cues::{AudioCue, BonkCue, RemarkCue};
 
 use mlua::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -64,6 +64,7 @@ macro_rules! call_cue_enum_inner_matchblock {
             // modify this when adding/deleting cues
             MultitypeCue::Remark(c) => c.$method($($x,)*),
             MultitypeCue::Bonk(c)   => c.$method($($x,)*),
+            MultitypeCue::Audio(c)   => c.$method($($x,)*),
         }
     }
 }
@@ -73,6 +74,7 @@ pub enum MultitypeCue {
     // modify this when adding/deleting cues
     Remark(RemarkCue),
     Bonk(BonkCue),
+    Audio(AudioCue),
 }
 
 #[typetag::serde]
