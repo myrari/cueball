@@ -4,7 +4,7 @@ pub use cues::{AudioCue, BonkCue, RemarkCue};
 
 use mlua::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::cmp::max;
+use std::{cmp::max, path::PathBuf};
 
 /*******************************************************************************
 * 0. NOTE TO FUTURE MAINTAINERS:                                               *
@@ -158,6 +158,14 @@ impl IntoLua for MultitypeCue {
     fn into_lua(self, lua: &Lua) -> LuaResult<LuaValue> {
         call_cue_enum_inner_matchblock!(self, into_lua, lua)
     }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Project {
+    pub name: String,
+    pub path: Option<PathBuf>,
+
+    pub cues: CueList,
 }
 
 #[derive(Serialize, Deserialize)]

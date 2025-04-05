@@ -3,8 +3,8 @@ pub mod inspector;
 use std::{fs::File, io::BufReader, path::PathBuf};
 
 use crate::{
-    cues::{BonkCue, RemarkCue, AudioCue},
-    Cue, CueList, MultitypeCue,
+    cues::{AudioCue, BonkCue, RemarkCue},
+    Cue, CueList, MultitypeCue, Project,
 };
 use anyhow::anyhow;
 use egui::{RichText, TextStyle};
@@ -12,8 +12,6 @@ use egui_extras::{Column, TableBuilder};
 use inspector::get_cue_inspector;
 use log::{debug, error};
 use rfd::FileDialog;
-use serde::{Deserialize, Serialize};
-
 const CUE_ID_WIDTH_PX: f32 = 50.;
 
 pub struct CueballApp {
@@ -25,6 +23,10 @@ impl Default for CueballApp {
         CueballApp {
             state: AppState {
                 project: Project::default(),
+                selected_cue: None,
+                hovered_cue: None,
+                dragged_cue: None,
+                inspector_panel: InspectorPanel::default(),
             },
         }
     }
@@ -39,29 +41,17 @@ impl CueballApp {
 
 pub struct AppState {
     pub project: Project,
-}
 
-#[derive(Serialize, Deserialize)]
-pub struct Project {
-    pub name: String,
-    pub path: Option<PathBuf>,
-
-    pub cues: CueList,
-
-    #[serde(skip)]
     selected_cue: Option<usize>,
-    #[serde(skip)]
     dragged_cue: Option<usize>,
-    #[serde(skip)]
     hovered_cue: Option<usize>,
-    #[serde(skip)]
     inspector_panel: InspectorPanel,
 }
 
-impl Project {
+impl AppState {
     fn select_cue(&mut self, new_cue_index: usize) -> Option<&MultitypeCue> {
-        if new_cue_index < self.cues.list.len() {
-            let new_cue = &self.cues.list[new_cue_index];
+        if new_cue_index < self.project.cues.list.len() {
+            let new_cue = &self.project.cues.list[new_cue_index];
             self.selected_cue = Some(new_cue_index);
             self.inspector_panel.id_buf = new_cue.get_id();
             Some(new_cue)
@@ -98,10 +88,6 @@ impl Default for Project {
             name: String::from("Untitled"),
             path: None,
             cues: CueList::new(),
-            selected_cue: None,
-            hovered_cue: None,
-            dragged_cue: None,
-            inspector_panel: InspectorPanel::default(),
         }
     }
 }
@@ -203,7 +189,7 @@ impl eframe::App for CueballApp {
                                     self.state.project.cues.get_new_cue_id().to_string(),
                                 )))
                         {
-                            self.state.project.select_cue(i);
+                            self.state.select_cue(i);
                         }
                     }
                     if ui.button("Remark").clicked() {
@@ -215,7 +201,7 @@ impl eframe::App for CueballApp {
                                     self.state.project.cues.get_new_cue_id().to_string(),
                                 )))
                         {
-                            self.state.project.select_cue(i);
+                            self.state.select_cue(i);
                         }
                     }
                     if ui.button("Bonk").clicked() {
@@ -227,7 +213,7 @@ impl eframe::App for CueballApp {
                                     self.state.project.cues.get_new_cue_id().to_string(),
                                 )))
                         {
-                            self.state.project.select_cue(i);
+                            self.state.select_cue(i);
                         }
                     }
                 });
@@ -238,7 +224,7 @@ impl eframe::App for CueballApp {
             .resizable(true)
             .show(ctx, |ui| {
                 ui.set_min_height(216.);
-                if let Some(cue_index) = self.state.project.selected_cue {
+                if let Some(cue_index) = self.state.selected_cue {
                     ui.vertical(|ui| {
                         // tab ribbon
                         ui.horizontal(|ui| {
@@ -246,7 +232,7 @@ impl eframe::App for CueballApp {
 
                             // add buttons for each tab
                             ui.selectable_value(
-                                &mut self.state.project.inspector_panel.selected_tab,
+                                &mut self.state.inspector_panel.selected_tab,
                                 InspectorPanelTabs::Basics,
                                 "Basics",
                             );
@@ -254,7 +240,7 @@ impl eframe::App for CueballApp {
                             if let Some(mut cue_inspector) = get_cue_inspector(cue) {
                                 if let Some(_) = cue_inspector.time_and_loops() {
                                     ui.selectable_value(
-                                        &mut self.state.project.inspector_panel.selected_tab,
+                                        &mut self.state.inspector_panel.selected_tab,
                                         InspectorPanelTabs::TimeLoops,
                                         "Time & Loops",
                                     );
@@ -264,7 +250,7 @@ impl eframe::App for CueballApp {
 
                         // main body
                         egui::ScrollArea::vertical().show(ui, |ui| {
-                            inspector_panel_body(ui, &mut self.state.project);
+                            inspector_panel_body(ui, &mut self.state);
                         });
                     });
                 } else {
@@ -274,7 +260,7 @@ impl eframe::App for CueballApp {
 
         // central panel
         egui::CentralPanel::default().show(ctx, |ui| {
-            cue_list_ui(ui, &mut self.state.project);
+            cue_list_ui(ui, &mut self.state);
         });
     }
 }
@@ -323,16 +309,16 @@ fn save_project(project: &Project) -> Result<PathBuf, anyhow::Error> {
     }
 }
 
-fn inspector_panel_body(ui: &mut egui::Ui, project: &mut Project) {
+fn inspector_panel_body(ui: &mut egui::Ui, state: &mut AppState) {
     //let cue = &mut project.cues.list[project.selected_cue.unwrap()];
-    let cue = match project.selected_cue {
-        Some(cue_index) => &mut project.cues.list[cue_index],
+    let cue = match state.selected_cue {
+        Some(cue_index) => &mut state.project.cues.list[cue_index],
         None => return,
     };
     ui.vertical(|ui| {
         //ui.set_min_height(200.);
         ui.set_width(ui.available_width());
-        match project.inspector_panel.selected_tab {
+        match state.inspector_panel.selected_tab {
             InspectorPanelTabs::Basics => {
                 // first row, default things for all cues
                 ui.horizontal(|ui| {
@@ -344,12 +330,12 @@ fn inspector_panel_body(ui: &mut egui::Ui, project: &mut Project) {
                         ui.set_width(80.);
                         ui.label("ID:");
                         let resp = ui.add(
-                            egui::TextEdit::singleline(&mut project.inspector_panel.id_buf)
+                            egui::TextEdit::singleline(&mut state.inspector_panel.id_buf)
                                 .font(TextStyle::Monospace)
                                 .desired_width(CUE_ID_WIDTH_PX),
                         );
                         if resp.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
-                            cue.set_id(project.inspector_panel.id_buf.as_str());
+                            cue.set_id(state.inspector_panel.id_buf.as_str());
                         }
                     });
                     ui.horizontal(|ui| {
@@ -376,7 +362,7 @@ fn inspector_panel_body(ui: &mut egui::Ui, project: &mut Project) {
     });
 }
 
-fn cue_list_ui(ui: &mut egui::Ui, project: &mut Project) {
+fn cue_list_ui(ui: &mut egui::Ui, state: &mut AppState) {
     let focus = ui.memory(|mem| mem.focused());
 
     let scroll_height = ui.available_height();
@@ -406,27 +392,27 @@ fn cue_list_ui(ui: &mut egui::Ui, project: &mut Project) {
         })
         .body(|mut body| {
             body.ui_mut().input(|inp| {
-                if let Some(i) = project.selected_cue {
+                if let Some(i) = state.selected_cue {
                     if inp.key_pressed(egui::Key::Home) {
-                        project.select_cue(0);
+                        state.select_cue(0);
                     }
                     if inp.key_pressed(egui::Key::ArrowDown) {
-                        project.select_cue(i + 1);
+                        state.select_cue(i + 1);
                     }
                     if inp.key_pressed(egui::Key::ArrowUp) && i != 0 {
-                        project.select_cue(i - 1);
+                        state.select_cue(i - 1);
                     }
-                    if inp.key_pressed(egui::Key::End) && project.cues.list.len() != 0 {
-                        project.select_cue(project.cues.list.len() - 1);
+                    if inp.key_pressed(egui::Key::End) && state.project.cues.list.len() != 0 {
+                        state.select_cue(state.project.cues.list.len() - 1);
                     }
                     if inp.key_pressed(egui::Key::Space) && focus.is_none() {
-                        handle_go(project);
+                        handle_go(state);
                     }
                     if inp.pointer.primary_released() {
-                        if let Some(h) = project.hovered_cue {
-                            if let Some(d) = project.dragged_cue {
-                                project.cues.move_cue(d, h);
-                                project.select_cue(h);
+                        if let Some(h) = state.hovered_cue {
+                            if let Some(d) = state.dragged_cue {
+                                state.project.cues.move_cue(d, h);
+                                state.select_cue(h);
                             }
                         }
                     }
@@ -435,10 +421,10 @@ fn cue_list_ui(ui: &mut egui::Ui, project: &mut Project) {
 
             let mut hovered = false;
             let mut dragged = false;
-            body.rows(18.0, project.cues.list.len(), |mut row| {
+            body.rows(18.0, state.project.cues.list.len(), |mut row| {
                 let i = row.index();
-                let this_selected = Some(i) == project.selected_cue;
-                let cue = &project.cues.list[i];
+                let this_selected = Some(i) == state.selected_cue;
+                let cue = &state.project.cues.list[i];
                 row.set_selected(this_selected);
                 row.col(|ui| {
                     ui.label(RichText::new(cue.get_id()).text_style(egui::TextStyle::Monospace));
@@ -452,33 +438,33 @@ fn cue_list_ui(ui: &mut egui::Ui, project: &mut Project) {
                 let response = row.response();
                 if response.clicked() {
                     if this_selected {
-                        project.selected_cue = None;
+                        state.selected_cue = None;
                     } else {
-                        project.select_cue(i);
+                        state.select_cue(i);
                     }
                 }
                 if response.dragged() {
-                    project.dragged_cue = Some(i);
+                    state.dragged_cue = Some(i);
                     dragged = true;
                 }
                 if response.contains_pointer() {
-                    project.hovered_cue = Some(i);
+                    state.hovered_cue = Some(i);
                     hovered = true;
                 }
             });
 
             if !dragged {
-                project.dragged_cue = None;
+                state.dragged_cue = None;
             }
             if !hovered {
-                project.hovered_cue = None;
+                state.hovered_cue = None;
             }
         });
 }
 
-fn handle_go(project: &mut Project) {
+fn handle_go(state: &mut AppState) {
     // get current cue
-    let cue_index = match project.selected_cue {
+    let cue_index = match state.selected_cue {
         Some(i) => i,
         None => {
             debug!("No cue selected for Go");
@@ -487,16 +473,16 @@ fn handle_go(project: &mut Project) {
     };
 
     // immutably get cue for next cue index
-    let cue = &project.cues.list[cue_index];
+    let cue = &state.project.cues.list[cue_index];
     let next_cue_index = cue_index + cue.next_offset();
 
-    let cue_mut = &mut project.cues.list[cue_index];
+    let cue_mut = &mut state.project.cues.list[cue_index];
 
     // play current cue
     cue_mut.go();
 
     // advance playhead
-    if let None = project.select_cue(next_cue_index) {
-        project.selected_cue = None;
+    if let None = state.select_cue(next_cue_index) {
+        state.selected_cue = None;
     }
 }
