@@ -1,5 +1,5 @@
 use crate::{
-    cues::{BonkCue, RemarkCue},
+    cues::{AudioCue, BonkCue, RemarkCue},
     MultitypeCue,
 };
 
@@ -18,7 +18,21 @@ pub fn get_cue_inspector(cue: &mut MultitypeCue) -> Option<Box<dyn CueInspector 
     match cue {
         MultitypeCue::Remark(ref mut q) => Some(Box::new(RemarkCueInspector { cue: q })),
         MultitypeCue::Bonk(ref mut q) => Some(Box::new(BonkCueInspector { cue: q })),
-        _ => None,
+        MultitypeCue::Audio(ref mut q) => Some(Box::new(AudioCueInspector { cue: q })),
+    }
+}
+
+#[derive(Debug)]
+struct AudioCueInspector<'a> {
+    pub cue: &'a mut AudioCue,
+}
+
+impl CueInspector for AudioCueInspector<'_> {
+    fn basics(&mut self, ui: &mut egui::Ui) -> () {
+        ui.horizontal(|ui| {
+            ui.label("File: ");
+            ui.text_edit_singleline(&mut self.cue.file_path);
+        });
     }
 }
 

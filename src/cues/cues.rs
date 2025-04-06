@@ -2,62 +2,7 @@ use log::{debug, info};
 use mlua::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use super::{
-    add_common_lua_fields, add_common_lua_methods, Cue, CueTypeAttributes,
-};
-
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
-pub struct AudioCue {
-    pub id: String,
-    pub name: String,
-
-    pub file_path: String,
-}
-
-impl AudioCue {
-    pub fn with_id(id: String) -> Self {
-        Self {
-            id,
-            name: "New audio cue".into(),
-            file_path: "".into(),
-        }
-    }
-}
-
-#[typetag::serde]
-impl Cue for AudioCue {
-    fn get_id(&self) -> String {
-        self.id.clone()
-    }
-    fn get_name(&self) -> String {
-        self.name.clone()
-    }
-    fn set_id(&mut self, new_id: &str) -> () {
-        self.id = new_id.to_string();
-    }
-    fn set_name(&mut self, new_name: &str) -> () {
-        self.name = new_name.to_string();
-    }
-    fn type_str_full(&self) -> String {
-        "Audio".to_string()
-    }
-    fn type_str_short(&self) -> String {
-        "Aud".to_string()
-    }
-    fn go(&mut self) -> () {
-        debug!("Audio {}", self.name)
-    }
-}
-
-impl LuaUserData for AudioCue {
-    fn add_fields<F: LuaUserDataFields<Self>>(fields: &mut F) {
-        add_common_lua_fields(fields);
-    }
-
-    fn add_methods<M: LuaUserDataMethods<Self>>(methods: &mut M) {
-        add_common_lua_methods(methods)
-    }
-}
+use super::{add_common_lua_fields, add_common_lua_methods, Cue, CueTypeAttributes};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct RemarkCue {

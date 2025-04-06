@@ -1,6 +1,8 @@
 mod cues;
+mod audio;
 
-pub use cues::{AudioCue, BonkCue, RemarkCue};
+pub use cues::{BonkCue, RemarkCue};
+pub use audio::AudioCue;
 
 use mlua::prelude::*;
 use serde::{Deserialize, Serialize};
