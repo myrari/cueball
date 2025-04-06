@@ -269,7 +269,10 @@ fn open_project() -> Result<Project, anyhow::Error> {
     let file = File::open(path)?;
     let reader = BufReader::new(file);
 
-    let project = serde_json::from_reader(reader)?;
+    let mut project: Project = serde_json::from_reader(reader)?;
+
+    project.cues.init_cues();
+
     Ok(project)
 }
 

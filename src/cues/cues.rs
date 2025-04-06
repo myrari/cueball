@@ -23,6 +23,8 @@ impl RemarkCue {
 
 #[typetag::serde]
 impl Cue for RemarkCue {
+    fn init(&mut self) -> () {}
+
     fn get_id(&self) -> String {
         self.id.clone()
     }
@@ -83,6 +85,8 @@ impl BonkCue {
 
 #[typetag::serde]
 impl Cue for BonkCue {
+    fn init(&mut self) -> () {}
+
     fn get_id(&self) -> String {
         self.id.clone()
     }

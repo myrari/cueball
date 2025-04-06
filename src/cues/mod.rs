@@ -1,8 +1,8 @@
-mod cues;
 mod audio;
+mod cues;
 
-pub use cues::{BonkCue, RemarkCue};
 pub use audio::AudioCue;
+pub use cues::{BonkCue, RemarkCue};
 
 use mlua::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -73,6 +73,8 @@ macro_rules! call_cue_enum_inner_matchblock {
 
 #[typetag::serde(tag = "type")]
 pub trait Cue {
+    fn init(&mut self) -> ();
+
     fn get_id(&self) -> String;
     fn set_id(&mut self, new_id: &str) -> ();
     fn get_id_num(&self) -> Option<u64> {
@@ -144,6 +146,9 @@ pub enum MultitypeCue {
 #[typetag::serde]
 impl Cue for MultitypeCue {
     // modify this when adding/deleting/modifying Cue methods
+    call_cue_enum_inner!(
+        fn init(&mut self) -> ();
+    );
     call_cue_enum_inner!(
         fn get_id(&self) -> String;
     );
@@ -252,8 +257,16 @@ impl CueList {
         Self { list: vec![] }
     }
 
-    pub fn add(&mut self, new_cue: MultitypeCue) -> Result<usize, ()> {
-        if self.consistency_checks_add(&new_cue) {
+    pub fn init_cues(&mut self) -> () {
+        for cue in &mut self.list {
+            cue.init();
+        }
+    }
+
+    pub fn add(&mut self, cue: MultitypeCue) -> Result<usize, ()> {
+        if self.consistency_checks_add(&cue) {
+            let mut new_cue = cue;
+            new_cue.init();
             self.list.push(new_cue);
             Ok(self.list.len() - 1)
         } else {
