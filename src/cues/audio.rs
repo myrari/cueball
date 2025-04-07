@@ -36,7 +36,12 @@ impl AudioCue {
 
             let source = Decoder::new(file)?;
 
+            if !sink.empty() {
+                sink.clear();
+            }
+
             sink.append(source);
+            sink.play();
 
             Ok(())
         } else {
@@ -113,6 +118,10 @@ impl Cue for AudioCue {
                 )
             }
         })
+    }
+
+    fn next_offset(&self) -> usize {
+        0
     }
 
     fn get_id(&self) -> String {

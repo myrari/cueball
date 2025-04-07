@@ -227,8 +227,8 @@ impl eframe::App for CueballApp {
                                 "Basics",
                             );
                             let cue = &mut self.state.project.cues.list[cue_index];
-                            if let Some(mut cue_inspector) = get_cue_inspector(cue) {
-                                if let Some(_) = cue_inspector.time_and_loops() {
+                            if let Some(cue_inspector) = get_cue_inspector(cue) {
+                                if cue_inspector.time_and_loops() {
                                     ui.selectable_value(
                                         &mut self.state.inspector_panel.selected_tab,
                                         InspectorPanelTabs::TimeLoops,
@@ -346,9 +346,7 @@ fn inspector_panel_body(ui: &mut egui::Ui, state: &mut AppState) {
             }
             InspectorPanelTabs::TimeLoops => {
                 if let Some(mut cue_inspector) = get_cue_inspector(cue) {
-                    if let Some(time_loops_func) = cue_inspector.time_and_loops() {
-                        time_loops_func(ui);
-                    }
+                    cue_inspector.time_and_loops_fn(ui);
                 }
             }
         }
