@@ -1,5 +1,8 @@
 pub mod inspector;
 
+mod audio;
+pub use audio::AudioCueInspector;
+
 use std::{fs::File, io::BufReader, path::PathBuf};
 
 use crate::{
