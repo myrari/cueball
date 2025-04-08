@@ -12,7 +12,7 @@ fn main() -> Result<(), anyhow::Error> {
             viewport: egui::ViewportBuilder::default(),
             ..Default::default()
         },
-        Box::new(|_| Ok(Box::new(CueballApp::default()))),
+        Box::new(|cc| Ok(Box::new(CueballApp::new(cc)))),
     ) {
         Ok(_) => Ok(()),
         Err(err) => Err(anyhow!("{}", err)),

@@ -6,7 +6,7 @@ use std::{
 
 use anyhow::anyhow;
 use egui::{Color32, Id, Pos2, Stroke};
-use log::error;
+// use log::error;
 use rodio::{Decoder, Source};
 
 use crate::cues::AudioCue;
@@ -47,7 +47,7 @@ impl CueInspector for AudioCueInspector<'_> {
                             ui.label("Not playing");
                         } else {
                             ui.label(sink.get_pos().as_secs_f64().to_string());
-                            ui.ctx().request_repaint();
+                            // ui.ctx().request_repaint();
                         }
                     } else {
                         ui.label("Cue not initialized!");
@@ -59,7 +59,7 @@ impl CueInspector for AudioCueInspector<'_> {
             ui.vertical(|ui| {
                 // sample views
                 draw_waveform_view(&self.cue, ui, total_width)
-                    .unwrap_or_else(|err| error!("Error drawing audio waveform: {}", err))
+                    // .unwrap_or_else(|err| error!("Error drawing audio waveform: {}", err))
             });
         });
     }
@@ -100,7 +100,7 @@ fn draw_waveform_view(
     let mut waveform_rect = ui.available_rect_before_wrap();
     waveform_rect.set_width(total_width * 0.7);
     let painter = ui.painter_at(waveform_rect);
-    painter.rect_filled(waveform_rect, 0., Color32::BLACK);
+    painter.rect_filled(waveform_rect, 4., Color32::BLACK);
 
     if !displayed_waveform.is_empty() {
         let wave_height = waveform_rect.height() / (2. * 100000.);
@@ -138,6 +138,8 @@ fn draw_waveform_view(
                 ],
                 Stroke::new(1.5, Color32::YELLOW),
             ));
+
+            ui.ctx().request_repaint();
         }
     }
 

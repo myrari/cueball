@@ -2,6 +2,7 @@ pub mod inspector;
 
 mod audio;
 pub use audio::AudioCueInspector;
+use serde::{Deserialize, Serialize};
 
 use std::{fs::File, io::BufReader, path::PathBuf};
 
@@ -17,6 +18,7 @@ use log::{debug, error};
 use rfd::FileDialog;
 const CUE_ID_WIDTH_PX: f32 = 50.;
 
+#[derive(Serialize, Deserialize)]
 pub struct CueballApp {
     state: AppState,
 }
@@ -36,18 +38,30 @@ impl Default for CueballApp {
 }
 
 impl CueballApp {
-    pub fn new(_cc: &eframe::CreationContext<'_>, state: AppState) -> Self {
-        // do nothing here for now
-        Self { state }
+    pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+        // persistence
+        if let Some(storage) = cc.storage {
+            let mut stored: CueballApp =
+                eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
+            stored.state.project.cues.init_cues();
+            return stored;
+        }
+
+        Default::default()
     }
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct AppState {
     pub project: Project,
 
     selected_cue: Option<usize>,
+
+    #[serde(skip)]
     dragged_cue: Option<usize>,
+    #[serde(skip)]
     hovered_cue: Option<usize>,
+    #[serde(skip)]
     inspector_panel: InspectorPanel,
 }
 
@@ -86,6 +100,12 @@ enum InspectorPanelTabs {
 }
 
 impl eframe::App for CueballApp {
+    // save state on shutdown
+    fn save(&mut self, storage: &mut dyn eframe::Storage) {
+        eframe::set_value(storage, eframe::APP_KEY, self);
+    }
+
+    // paint frame
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // program-wide keyboard shortcuts
         ctx.input(|inp| {
