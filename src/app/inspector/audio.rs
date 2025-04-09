@@ -11,7 +11,7 @@ use rodio::{Decoder, Source};
 
 use crate::cues::AudioCue;
 
-use super::inspector::CueInspector;
+use super::CueInspector;
 
 #[derive(Debug)]
 pub struct AudioCueInspector<'a> {
@@ -59,7 +59,7 @@ impl CueInspector for AudioCueInspector<'_> {
             ui.vertical(|ui| {
                 // sample views
                 draw_waveform_view(&self.cue, ui, total_width)
-                    // .unwrap_or_else(|err| error!("Error drawing audio waveform: {}", err))
+                // .unwrap_or_else(|err| error!("Error drawing audio waveform: {}", err))
             });
         });
     }

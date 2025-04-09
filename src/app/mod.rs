@@ -1,7 +1,6 @@
 pub mod inspector;
 
-mod audio;
-pub use audio::AudioCueInspector;
+pub use inspector::AudioCueInspector;
 use serde::{Deserialize, Serialize};
 
 use std::{fs::File, io::BufReader, path::PathBuf};

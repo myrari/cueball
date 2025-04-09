@@ -3,7 +3,9 @@ use crate::{
     MultitypeCue,
 };
 
-use super::AudioCueInspector;
+mod audio;
+
+pub use audio::AudioCueInspector;
 
 pub trait CueInspector {
     // unique because ALL cues will show basics tab
