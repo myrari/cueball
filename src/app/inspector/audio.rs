@@ -95,7 +95,10 @@ fn draw_waveform_view(
     // } else {
     //     &[] as &[i16]
     // };
-    let displayed_waveform = &samples[..];
+
+    // only take every nth point
+    const N: usize = 4;
+    let displayed_waveform: Vec<&i16> = samples.iter().step_by(N).collect();
 
     let mut waveform_rect = ui.available_rect_before_wrap();
     waveform_rect.set_width(total_width * 0.7);
@@ -112,7 +115,7 @@ fn draw_waveform_view(
             .enumerate()
             .map(|(i, sample)| {
                 let x = waveform_rect.left_top().x + (i as f32 * wave_width);
-                let y = center_y - ((*sample as f32) * wave_height);
+                let y = center_y - ((**sample as f32) * wave_height);
                 Pos2 { x, y }
             })
             .collect();
