@@ -1,10 +1,10 @@
-use std::{fmt::Debug, fs::File, io::BufReader};
+use std::{fmt::Debug, fs::File, io::BufReader, time::Duration};
 
 use crate::audio;
 use anyhow::anyhow;
-use log::{debug, error, info};
+use log::{debug, error};
 use mlua::prelude::*;
-use rodio::{Decoder, Sink};
+use rodio::{Decoder, Sink, Source};
 use serde::{Deserialize, Serialize};
 
 use super::{add_common_lua_fields, add_common_lua_methods, Cue};
@@ -15,6 +15,9 @@ pub struct AudioCue {
     pub name: String,
 
     pub file_path: String,
+
+    pub start: f32,
+    pub end: f32,
 
     #[serde(skip)]
     pub sink: Option<Box<Sink>>,
@@ -27,6 +30,8 @@ impl AudioCue {
             name: "New audio cue".into(),
             file_path: "".into(),
             sink: None,
+            start: 0.,
+            end: 0.,
         }
     }
 
@@ -35,12 +40,23 @@ impl AudioCue {
             let file = BufReader::new(File::open(self.file_path.clone())?);
 
             let source = Decoder::new(file)?;
+            let buffer = source.buffered();
+
+            let sample_rate = buffer.sample_rate();
+            let num_samples = buffer.clone().count();
+            let duration =
+                Duration::from_secs_f32((num_samples as f32) / (2. * sample_rate as f32));
+
+            // apply start and end offsets
+            let trimmed_source = buffer
+                .take_duration(duration - Duration::from_secs_f32(self.end))
+                .skip_duration(Duration::from_secs_f32(self.start));
 
             if !sink.empty() {
                 sink.clear();
             }
 
-            sink.append(source);
+            sink.append(trimmed_source);
             sink.play();
 
             Ok(())
@@ -69,6 +85,8 @@ impl Clone for AudioCue {
                     sink: Some(Box::new(
                         Sink::try_new(&am.handle).expect("Failed to create sink for audio cue"),
                     )),
+                    start: self.start,
+                    end: self.end,
                 }
             } else {
                 Self {
@@ -76,6 +94,8 @@ impl Clone for AudioCue {
                     name: self.name.clone(),
                     file_path: self.file_path.clone(),
                     sink: None,
+                    start: self.start,
+                    end: self.end,
                 }
             }
         })
@@ -96,7 +116,7 @@ impl Debug for AudioCue {
 #[typetag::serde]
 impl Cue for AudioCue {
     fn init(&mut self) -> () {
-        info!("Init audio cue {}", self.id);
+        // info!("Init audio cue {}", self.id);
         // initialize the sink for this cue
         if self.sink.is_some() {
             debug!("Audio cue {} already initted!", self.id)
@@ -118,10 +138,6 @@ impl Cue for AudioCue {
                 )
             }
         })
-    }
-
-    fn next_offset(&self) -> usize {
-        0
     }
 
     fn get_id(&self) -> String {

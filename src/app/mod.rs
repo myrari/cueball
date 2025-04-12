@@ -38,6 +38,8 @@ impl Default for CueballApp {
 
 impl CueballApp {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+        egui_extras::install_image_loaders(&cc.egui_ctx);
+
         // persistence
         if let Some(storage) = cc.storage {
             let mut stored: CueballApp =
