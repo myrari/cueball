@@ -369,7 +369,7 @@ impl Default for CueTypeAttributes {
 }
 // Possibly change time representation later.
 // For now this is a float of seconds.
-pub type CueTime = f64;
+pub type CueTime = f32;
 
 impl LuaUserData for Box<dyn Cue> {
     fn add_fields<F: LuaUserDataFields<Self>>(fields: &mut F) {

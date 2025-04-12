@@ -7,7 +7,7 @@ use mlua::prelude::*;
 use rodio::{Decoder, Sink, Source};
 use serde::{Deserialize, Serialize};
 
-use super::{add_common_lua_fields, add_common_lua_methods, Cue};
+use super::{add_common_lua_fields, add_common_lua_methods, Cue, CueRunning, CueTime};
 
 #[derive(Serialize, Deserialize)]
 pub struct AudioCue {
@@ -21,6 +21,8 @@ pub struct AudioCue {
 
     #[serde(skip)]
     pub sink: Option<Box<Sink>>,
+    #[serde(skip)]
+    pub duration: Option<f32>,
 }
 
 impl AudioCue {
@@ -29,9 +31,10 @@ impl AudioCue {
             id,
             name: "New audio cue".into(),
             file_path: "".into(),
-            sink: None,
             start: 0.,
             end: 0.,
+            sink: None,
+            duration: None,
         }
     }
 
@@ -64,6 +67,46 @@ impl AudioCue {
             Err(anyhow!("Not initialized!"))
         }
     }
+
+    fn init_duration(&mut self) -> Result<(), anyhow::Error> {
+        let file = BufReader::new(File::open(self.file_path.clone())?);
+
+        let source = Decoder::new(file)?;
+
+        let sample_rate = source.sample_rate();
+        let num_samples = source.count();
+        let raw_duration = (num_samples as f32) / (2. * sample_rate as f32);
+        self.duration = Some(raw_duration - (self.start + self.end));
+        Ok(())
+    }
+
+    pub fn set_start(&mut self, v: f32) -> Result<(), anyhow::Error> {
+        Ok(match self.duration {
+            Some(d) => {
+                let diff = self.start - v;
+                self.duration = Some(d + diff);
+                self.start = v;
+            }
+            None => {
+                self.start = v;
+                self.init_duration()?;
+            }
+        })
+    }
+
+    pub fn set_end(&mut self, v: f32) -> Result<(), anyhow::Error> {
+        Ok(match self.duration {
+            Some(d) => {
+                let diff = self.end - v;
+                self.duration = Some(d + diff);
+                self.end = v;
+            }
+            None => {
+                self.end = v;
+                self.init_duration()?;
+            }
+        })
+    }
 }
 
 impl PartialEq for AudioCue {
@@ -82,11 +125,12 @@ impl Clone for AudioCue {
                     id: self.id.clone(),
                     name: self.name.clone(),
                     file_path: self.file_path.clone(),
+                    start: self.start,
+                    end: self.end,
                     sink: Some(Box::new(
                         Sink::try_new(&am.handle).expect("Failed to create sink for audio cue"),
                     )),
-                    start: self.start,
-                    end: self.end,
+                    duration: self.duration,
                 }
             } else {
                 Self {
@@ -96,6 +140,7 @@ impl Clone for AudioCue {
                     sink: None,
                     start: self.start,
                     end: self.end,
+                    duration: self.duration,
                 }
             }
         })
@@ -137,7 +182,15 @@ impl Cue for AudioCue {
                     self.id
                 )
             }
-        })
+        });
+        // intialize duration, read from file
+        match self.init_duration() {
+            Err(err) => error!(
+                "Could not init audio cue {}, duration err: {}",
+                self.id, err
+            ),
+            Ok(_) => {}
+        };
     }
 
     fn get_id(&self) -> String {
@@ -158,9 +211,68 @@ impl Cue for AudioCue {
     fn type_str_short(&self) -> String {
         "Aud".to_string()
     }
+
     fn go(&mut self) -> () {
         if let Err(err) = self.play_audio() {
             error!("Error playing audio cue {}: {}", self.id, err);
+        }
+    }
+
+    fn running(&self) -> CueRunning {
+        if let Some(sink) = &self.sink {
+            if sink.empty() {
+                CueRunning::Stopped
+            } else if sink.is_paused() {
+                CueRunning::Paused
+            } else {
+                CueRunning::Running
+            }
+        } else {
+            CueRunning::Stopped
+        }
+    }
+
+    fn stop(&mut self) -> () {
+        if let Some(sink) = &self.sink {
+            sink.clear();
+        }
+    }
+
+    fn set_paused(&mut self, pu: bool) -> () {
+        if let Some(sink) = &self.sink {
+            if pu {
+                sink.pause();
+            } else {
+                sink.play();
+            }
+        }
+    }
+
+    fn length(&self) -> Option<CueTime> {
+        self.duration
+    }
+
+    fn elapsed(&self) -> Option<CueTime> {
+        if let Some(sink) = &self.sink {
+            if !sink.empty() {
+                Some(sink.get_pos().as_secs_f32())
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }
+
+    fn remaining(&self) -> Option<CueTime> {
+        if let Some(sink) = &self.sink {
+            if let Some(dur) = self.duration {
+                Some(dur - sink.get_pos().as_secs_f32())
+            } else {
+                None
+            }
+        } else {
+            None
         }
     }
 }

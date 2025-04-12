@@ -10,7 +10,7 @@ use crate::{
     Cue, MultitypeCue, Project,
 };
 use anyhow::anyhow;
-use egui::{RichText, TextStyle};
+use egui::{Color32, Rect, RichText, Stroke, TextStyle};
 use egui_extras::{Column, TableBuilder};
 use inspector::get_cue_inspector;
 use log::{debug, error};
@@ -396,7 +396,7 @@ fn cue_list_ui(ui: &mut egui::Ui, state: &mut AppState) {
         .column(Column::auto())
         .column(Column::auto())
         .column(Column::remainder())
-        //.sense(egui::Sense::click())
+        .column(Column::remainder())
         .sense(egui::Sense::click_and_drag())
         .header(20.0, |mut header| {
             header.col(|ui| {
@@ -408,6 +408,9 @@ fn cue_list_ui(ui: &mut egui::Ui, state: &mut AppState) {
             });
             header.col(|ui| {
                 ui.strong("Name");
+            });
+            header.col(|ui| {
+                ui.strong("Duration");
             });
         })
         .body(|mut body| {
@@ -446,28 +449,86 @@ fn cue_list_ui(ui: &mut egui::Ui, state: &mut AppState) {
                 let this_selected = Some(i) == state.selected_cue;
                 let cue = &state.project.cues.list[i];
                 row.set_selected(this_selected);
+
+                let mut this_clicked = false;
+                let mut this_dragged = false;
+                let mut this_hovered = false;
+
+                // cue id
                 row.col(|ui| {
-                    ui.label(RichText::new(cue.get_id()).text_style(egui::TextStyle::Monospace));
+                    let resp = ui
+                        .label(RichText::new(cue.get_id()).text_style(egui::TextStyle::Monospace));
+                    this_clicked |= resp.clicked();
+                    this_dragged |= resp.dragged();
+                    this_hovered |= resp.contains_pointer();
                 });
+                // cue type
                 row.col(|ui| {
-                    ui.label(cue.type_str_short());
+                    let resp = ui.label(cue.type_str_short());
+                    this_clicked |= resp.clicked();
+                    this_dragged |= resp.dragged();
+                    this_hovered |= resp.contains_pointer();
                 });
+                // cue name
                 row.col(|ui| {
-                    ui.label(cue.get_name());
+                    let resp = ui.label(cue.get_name());
+                    this_clicked |= resp.clicked();
+                    this_dragged |= resp.dragged();
+                    this_hovered |= resp.contains_pointer();
                 });
-                let response = row.response();
-                if response.clicked() {
+
+                // times column
+                row.col(|ui| {
+                    ui.set_max_width(64.);
+                    if let Some(len) = cue.length() {
+                        let rect = ui.available_rect_before_wrap();
+                        // let painter = ui.painter_at(rect);
+                        let painter = ui.painter();
+                        painter.rect_stroke(
+                            rect,
+                            0.,
+                            Stroke::new(2., Color32::from_rgb(0, 200, 0)),
+                        );
+                        if let Some(el) = cue.elapsed() {
+                            let el_width = el / len * rect.width();
+                            painter.rect_filled(
+                                Rect {
+                                    min: rect.min,
+                                    max: egui::Pos2 {
+                                        x: rect.min.x + el_width,
+                                        y: rect.max.y,
+                                    },
+                                },
+                                0.,
+                                Color32::from_rgba_unmultiplied(0, 128, 0, 64),
+                            );
+                            ui.ctx().request_repaint();
+                            ui.label(format!("{:.3}", el));
+                        } else {
+                            ui.label(format!("{:.3}", len));
+                        }
+                    } else {
+                        ui.weak(format!("{:.3}", 0.));
+                    }
+                });
+
+                let resp = row.response();
+                this_clicked |= resp.clicked();
+                this_dragged |= resp.dragged();
+                this_hovered |= resp.contains_pointer();
+
+                if this_clicked {
                     if this_selected {
                         state.selected_cue = None;
                     } else {
                         state.select_cue(i);
                     }
                 }
-                if response.dragged() {
+                if this_dragged {
                     state.dragged_cue = Some(i);
                     dragged = true;
                 }
-                if response.contains_pointer() {
+                if this_hovered {
                     state.hovered_cue = Some(i);
                     hovered = true;
                 }

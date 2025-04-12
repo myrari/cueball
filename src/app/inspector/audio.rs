@@ -226,7 +226,8 @@ fn draw_waveform_view(
     if start_icon_resp.dragged() {
         let delta = start_icon_resp.drag_delta().x / horiz_scale;
         let new_pos = (cue.start + delta).clamp(0., sample_len - cue.end);
-        cue.start = new_pos;
+        // cue.start = new_pos;
+        let _ = cue.set_start(new_pos);
     }
 
     painter.add(egui::Shape::line_segment(
@@ -277,7 +278,7 @@ fn draw_waveform_view(
     if end_icon_resp.dragged() {
         let delta = end_icon_resp.drag_delta().x / horiz_scale;
         let new_pos = (cue.end - delta).clamp(0., sample_len - cue.start);
-        cue.end = new_pos;
+        let _ = cue.set_end(new_pos);
     }
 
     painter.add(egui::Shape::line_segment(
