@@ -231,6 +231,11 @@ impl eframe::App for CueballApp {
                         }
                     }
                 });
+                // project title
+                ui.with_layout(
+                    egui::Layout::centered_and_justified(egui::Direction::LeftToRight),
+                    |ui| ui.label(RichText::new(self.state.project.name.clone()).strong()),
+                );
             });
         });
 
