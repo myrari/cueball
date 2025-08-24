@@ -19,19 +19,17 @@ const CUE_ID_WIDTH_PX: f32 = 50.;
 
 #[derive(Serialize, Deserialize)]
 pub struct CueballApp {
+    #[serde(skip)]
     state: AppState,
+
+    project_path: Option<PathBuf>,
 }
 
 impl Default for CueballApp {
     fn default() -> Self {
         CueballApp {
-            state: AppState {
-                project: Project::default(),
-                selected_cue: None,
-                hovered_cue: None,
-                dragged_cue: None,
-                inspector_panel: InspectorPanel::default(),
-            },
+            state: AppState::default(),
+            project_path: None,
         }
     }
 }
@@ -44,11 +42,25 @@ impl CueballApp {
         if let Some(storage) = cc.storage {
             let mut stored: CueballApp =
                 eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
-            stored.state.project.cues.init_cues();
+            if let Some(ref project_path) = stored.project_path {
+                match open_project(project_path.clone()) {
+                    Ok(new_project) => {
+                        stored.state.project = new_project;
+                    }
+                    Err(err) => {
+                        error!("Failed to open project: {}", err);
+                    }
+                }
+            }
             return stored;
         }
 
         Default::default()
+    }
+
+    fn set_project_path(&mut self, path: Option<PathBuf>) -> () {
+        self.project_path = path.clone();
+        self.state.project.path = path.clone();
     }
 }
 
@@ -64,6 +76,18 @@ pub struct AppState {
     hovered_cue: Option<usize>,
     #[serde(skip)]
     inspector_panel: InspectorPanel,
+}
+
+impl Default for AppState {
+    fn default() -> Self {
+        AppState {
+            project: Project::default(),
+            selected_cue: None,
+            hovered_cue: None,
+            dragged_cue: None,
+            inspector_panel: InspectorPanel::default(),
+        }
+    }
 }
 
 impl AppState {
@@ -115,11 +139,11 @@ impl eframe::App for CueballApp {
                 if inp.key_pressed(egui::Key::S) {
                     if inp.modifiers.shift {
                         // save-as
-                        self.state.project.path = None;
+                        self.set_project_path(None);
                     }
                     match save_project(&self.state.project) {
                         Ok(path) => {
-                            self.state.project.path = Some(path);
+                            self.set_project_path(Some(path));
                         }
                         Err(err) => {
                             error!("Failed to save project: {}", err)
@@ -129,14 +153,22 @@ impl eframe::App for CueballApp {
 
                 if inp.key_pressed(egui::Key::O) {
                     if inp.modifiers.ctrl && inp.key_pressed(egui::Key::O) {
-                        match open_project() {
-                            Ok(new_project) => {
-                                self.state.project = new_project;
+                        match FileDialog::new()
+                            .add_filter("cueball", &["cueball", "cbp"])
+                            .pick_file()
+                        {
+                            None => {
+                                error!("No file path selected!");
                             }
-                            Err(err) => {
-                                error!("Failed to open project: {}", err);
-                            }
-                        }
+                            Some(path) => match open_project(path) {
+                                Ok(new_project) => {
+                                    self.state.project = new_project;
+                                }
+                                Err(err) => {
+                                    error!("Failed to open project: {}", err);
+                                }
+                            },
+                        };
                     }
                 }
             }
@@ -155,7 +187,7 @@ impl eframe::App for CueballApp {
                     if ui.button("Save").clicked() {
                         match save_project(&self.state.project) {
                             Ok(path) => {
-                                self.state.project.path = Some(path);
+                                self.set_project_path(Some(path));
                             }
                             Err(err) => {
                                 error!("Failed to save project: {}", err)
@@ -164,10 +196,10 @@ impl eframe::App for CueballApp {
                     }
                     // save as the same as save, but reset project path
                     if ui.button("Save As").clicked() {
-                        self.state.project.path = None;
+                        self.set_project_path(None);
                         match save_project(&self.state.project) {
                             Ok(path) => {
-                                self.state.project.path = Some(path);
+                                self.set_project_path(Some(path));
                             }
                             Err(err) => {
                                 error!("Failed to save project: {}", err)
@@ -177,14 +209,22 @@ impl eframe::App for CueballApp {
 
                     // open button
                     if ui.button("Open").clicked() {
-                        match open_project() {
-                            Ok(new_project) => {
-                                self.state.project = new_project;
+                        match FileDialog::new()
+                            .add_filter("cueball", &["cueball", "cbp"])
+                            .pick_file()
+                        {
+                            None => {
+                                error!("No file path selected!");
                             }
-                            Err(err) => {
-                                error!("Failed to open project: {}", err);
-                            }
-                        }
+                            Some(path) => match open_project(path) {
+                                Ok(new_project) => {
+                                    self.state.project = new_project;
+                                }
+                                Err(err) => {
+                                    error!("Failed to open project: {}", err);
+                                }
+                            },
+                        };
                     }
 
                     // quit button
@@ -284,17 +324,7 @@ impl eframe::App for CueballApp {
     }
 }
 
-fn open_project() -> Result<Project, anyhow::Error> {
-    let path = match FileDialog::new()
-        .add_filter("cueball", &["cueball", "cbp"])
-        .pick_file()
-    {
-        None => {
-            return Err(anyhow!("No file path selected!"));
-        }
-        Some(path) => path,
-    };
-
+fn open_project(path: PathBuf) -> Result<Project, anyhow::Error> {
     let file = File::open(path)?;
     let reader = BufReader::new(file);
 
