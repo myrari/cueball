@@ -332,6 +332,8 @@ fn open_project(path: PathBuf) -> Result<Project, anyhow::Error> {
 
     project.cues.init_cues();
 
+    debug!("Loaded project {}", project.name);
+
     Ok(project)
 }
 
@@ -348,6 +350,7 @@ fn save_project(project: &Project) -> Result<PathBuf, anyhow::Error> {
                 Some(path) => {
                     let file = File::create(&path)?;
                     serde_json::to_writer(file, project)?;
+                    debug!("Saved project {} to {}", project.name, path.display());
                     Ok(path)
                 }
             }
@@ -356,6 +359,7 @@ fn save_project(project: &Project) -> Result<PathBuf, anyhow::Error> {
             // save path already set
             let file = File::create(&path)?;
             serde_json::to_writer(file, project)?;
+            debug!("Saved project {} to {}", project.name, path.display());
             Ok(path.to_path_buf())
         }
     }
