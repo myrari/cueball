@@ -2,7 +2,7 @@ use std::{fmt::Debug, fs::File, io::BufReader, time::Duration};
 
 use crate::audio;
 use anyhow::anyhow;
-use log::{debug, error};
+use log::{debug, error, warn};
 use mlua::prelude::*;
 use rodio::{Decoder, Sink, Source};
 use serde::{Deserialize, Serialize};
@@ -19,10 +19,17 @@ pub struct AudioCue {
     pub start: f32,
     pub end: f32,
 
+    #[serde(default = "default_volume")]
+    volume: f32,
+
     #[serde(skip)]
     pub sink: Option<Box<Sink>>,
     #[serde(skip)]
     pub duration: Option<f32>,
+}
+
+fn default_volume() -> f32 {
+    1.0
 }
 
 impl AudioCue {
@@ -33,6 +40,7 @@ impl AudioCue {
             file_path: "".into(),
             start: 0.,
             end: 0.,
+            volume: 1.,
             sink: None,
             duration: None,
         }
@@ -58,6 +66,8 @@ impl AudioCue {
             if !sink.empty() {
                 sink.clear();
             }
+
+            sink.set_volume(self.volume);
 
             sink.append(trimmed_source);
             sink.play();
@@ -107,6 +117,20 @@ impl AudioCue {
             }
         })
     }
+
+    pub fn get_volume(&self) -> f32 {
+        self.volume
+    }
+    pub fn set_volume(&mut self, v: f32) -> Result<(), anyhow::Error> {
+        if let Some(sink) = &self.sink {
+            self.volume = v;
+            sink.set_volume(self.volume);
+
+            Ok(())
+        } else {
+            Err(anyhow!("Not initialized!"))
+        }
+    }
 }
 
 impl PartialEq for AudioCue {
@@ -127,6 +151,7 @@ impl Clone for AudioCue {
                     file_path: self.file_path.clone(),
                     start: self.start,
                     end: self.end,
+                    volume: self.volume,
                     sink: Some(Box::new(
                         Sink::try_new(&am.handle).expect("Failed to create sink for audio cue"),
                     )),
@@ -140,6 +165,7 @@ impl Clone for AudioCue {
                     sink: None,
                     start: self.start,
                     end: self.end,
+                    volume: self.volume,
                     duration: self.duration,
                 }
             }
@@ -185,10 +211,19 @@ impl Cue for AudioCue {
         });
         // intialize duration, read from file
         match self.init_duration() {
-            Err(err) => error!(
-                "Could not init audio cue {}, duration err: {}",
-                self.id, err
-            ),
+            Err(err) => {
+                if let Some(_) = err.downcast_ref::<std::io::Error>() {
+                    warn!(
+                        "Tried to init audio cue {} with invalid audio file",
+                        self.id
+                    )
+                } else {
+                    error!(
+                        "Could not init audio cue {}, duration err: {}",
+                        self.id, err
+                    )
+                }
+            }
             Ok(_) => {}
         };
     }

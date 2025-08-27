@@ -35,7 +35,16 @@ impl<'a> AudioCueInspector<'a> {
     fn time_and_loops(&mut self, ui: &mut egui::Ui) -> () {
         let audio_data = match decode_source(&self.cue, ui) {
             Err(err) => {
-                error!("Could not decode audio for cue {}: {}", self.cue.id, err);
+                if let Some(io_err) = err.downcast_ref::<std::io::Error>() {
+                    // debug!(
+                    //     "Cannot draw audio for cue {} with invalid audio file",
+                    //     self.cue.id
+                    // )
+                    ui.colored_label(egui::Color32::RED, "Invalid audio file: ");
+                    ui.colored_label(egui::Color32::RED, io_err.to_string());
+                } else {
+                    error!("Could not decode audio for cue {}: {}", self.cue.id, err);
+                }
                 return;
             }
             Ok(d) => d,
@@ -94,6 +103,20 @@ impl<'a> AudioCueInspector<'a> {
             });
         });
     }
+
+    fn levels(&mut self, ui: &mut egui::Ui) -> () {
+        let mut v = self.cue.get_volume();
+        ui.add(
+            egui::Slider::new(&mut v, 0.0..=2.0)
+                .vertical()
+                .text("Volume"),
+        );
+        if v != self.cue.get_volume() {
+            if let Err(err) = self.cue.set_volume(v) {
+                error!("Could not set volume for cue {}: {}", self.cue.id, err);
+            }
+        }
+    }
 }
 
 impl CueInspector for AudioCueInspector<'_> {
@@ -101,6 +124,7 @@ impl CueInspector for AudioCueInspector<'_> {
         match tab {
             super::InspectorPanelTabs::Basics => true,
             super::InspectorPanelTabs::TimeLoops => true,
+            super::InspectorPanelTabs::Levels => true,
             _ => false,
         }
     }
@@ -109,6 +133,7 @@ impl CueInspector for AudioCueInspector<'_> {
         match tab {
             super::InspectorPanelTabs::Basics => self.basics(ui),
             super::InspectorPanelTabs::TimeLoops => self.time_and_loops(ui),
+            super::InspectorPanelTabs::Levels => self.levels(ui),
             _ => {}
         }
     }

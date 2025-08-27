@@ -11,13 +11,15 @@ pub use audio::AudioCueInspector;
 pub enum InspectorPanelTabs {
     Basics,
     TimeLoops,
+    Levels,
     Extra,
 }
 
 impl InspectorPanelTabs {
-    pub const ITER: [(InspectorPanelTabs, &str); 3] = [
+    pub const ITER: [(InspectorPanelTabs, &str); 4] = [
         (InspectorPanelTabs::Basics, "Basics"),
         (InspectorPanelTabs::TimeLoops, "Time & Loops"),
+        (InspectorPanelTabs::Levels, "Levels"),
         (InspectorPanelTabs::Extra, "Extra"),
     ];
 }
