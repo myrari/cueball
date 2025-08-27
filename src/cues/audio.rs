@@ -29,7 +29,7 @@ pub struct AudioCue {
 }
 
 fn default_volume() -> f32 {
-    1.0
+    0.5
 }
 
 impl AudioCue {

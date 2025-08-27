@@ -36,10 +36,6 @@ impl<'a> AudioCueInspector<'a> {
         let audio_data = match decode_source(&self.cue, ui) {
             Err(err) => {
                 if let Some(io_err) = err.downcast_ref::<std::io::Error>() {
-                    // debug!(
-                    //     "Cannot draw audio for cue {} with invalid audio file",
-                    //     self.cue.id
-                    // )
                     ui.colored_label(egui::Color32::RED, "Invalid audio file: ");
                     ui.colored_label(egui::Color32::RED, io_err.to_string());
                 } else {
@@ -108,6 +104,8 @@ impl<'a> AudioCueInspector<'a> {
         let mut v = self.cue.get_volume();
         ui.add(
             egui::Slider::new(&mut v, 0.0..=2.0)
+                .logarithmic(true)
+                .smallest_positive(0.005)
                 .vertical()
                 .text("Volume"),
         );
