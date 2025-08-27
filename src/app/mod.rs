@@ -1,20 +1,20 @@
 pub mod inspector;
 
 pub use inspector::AudioCueInspector;
-use serde::{Deserialize, Serialize};
-
-use std::{fs::File, io::BufReader, path::PathBuf};
+use inspector::{get_cue_inspector, InspectorPanelTabs};
 
 use crate::{
     cues::{AudioCue, BonkCue, RemarkCue},
     Cue, MultitypeCue, Project,
 };
+
 use anyhow::anyhow;
 use egui::{Color32, Rect, RichText, Stroke, TextStyle};
 use egui_extras::{Column, TableBuilder};
-use inspector::get_cue_inspector;
 use log::{debug, error};
 use rfd::FileDialog;
+use serde::{Deserialize, Serialize};
+use std::{fs::File, io::BufReader, path::PathBuf};
 const CUE_ID_WIDTH_PX: f32 = 50.;
 
 #[derive(Serialize, Deserialize)]
@@ -116,12 +116,6 @@ impl Default for InspectorPanel {
             id_buf: String::new(),
         }
     }
-}
-
-#[derive(Debug, PartialEq)]
-enum InspectorPanelTabs {
-    Basics,
-    TimeLoops,
 }
 
 impl eframe::App for CueballApp {
@@ -290,19 +284,16 @@ impl eframe::App for CueballApp {
                             ui.set_height(16.);
 
                             // add buttons for each tab
-                            ui.selectable_value(
-                                &mut self.state.inspector_panel.selected_tab,
-                                InspectorPanelTabs::Basics,
-                                "Basics",
-                            );
                             let cue = &mut self.state.project.cues.list[cue_index];
                             if let Some(cue_inspector) = get_cue_inspector(cue) {
-                                if cue_inspector.time_and_loops() {
-                                    ui.selectable_value(
-                                        &mut self.state.inspector_panel.selected_tab,
-                                        InspectorPanelTabs::TimeLoops,
-                                        "Time & Loops",
-                                    );
+                                for (tab, name) in InspectorPanelTabs::ITER {
+                                    if cue_inspector.has_tab(&tab) {
+                                        ui.selectable_value(
+                                            &mut self.state.inspector_panel.selected_tab,
+                                            tab,
+                                            name,
+                                        );
+                                    }
                                 }
                             }
                         });
@@ -374,43 +365,42 @@ fn inspector_panel_body(ui: &mut egui::Ui, state: &mut AppState) {
     ui.vertical(|ui| {
         //ui.set_min_height(200.);
         ui.set_width(ui.available_width());
-        match state.inspector_panel.selected_tab {
-            InspectorPanelTabs::Basics => {
-                // first row, default things for all cues
-                ui.horizontal(|ui| {
-                    // cue number
-                    ui.horizontal(|ui| {
-                        ui.label(format!("Type: {}", cue.type_str_full()));
-                    });
-                    ui.horizontal(|ui| {
-                        ui.set_width(80.);
-                        ui.label("ID:");
-                        let resp = ui.add(
-                            egui::TextEdit::singleline(&mut state.inspector_panel.id_buf)
-                                .font(TextStyle::Monospace)
-                                .desired_width(CUE_ID_WIDTH_PX),
-                        );
-                        if resp.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
-                            cue.set_id(state.inspector_panel.id_buf.as_str());
-                        }
-                    });
-                    ui.horizontal(|ui| {
-                        ui.label("Name:");
-                        let mut cue_name = cue.get_name();
-                        ui.text_edit_singleline(&mut cue_name);
-                        cue.set_name(cue_name.as_str());
-                    });
-                });
 
-                // second row, for things specifc to a type of cue
-                if let Some(mut cue_inspector) = get_cue_inspector(cue) {
-                    cue_inspector.basics(ui);
-                }
+        // special handling for basics tab
+        if state.inspector_panel.selected_tab == InspectorPanelTabs::Basics {
+            // first row, default things for all cues
+            ui.horizontal(|ui| {
+                // cue number
+                ui.horizontal(|ui| {
+                    ui.label(format!("Type: {}", cue.type_str_full()));
+                });
+                ui.horizontal(|ui| {
+                    ui.set_width(80.);
+                    ui.label("ID:");
+                    let resp = ui.add(
+                        egui::TextEdit::singleline(&mut state.inspector_panel.id_buf)
+                            .font(TextStyle::Monospace)
+                            .desired_width(CUE_ID_WIDTH_PX),
+                    );
+                    if resp.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
+                        cue.set_id(state.inspector_panel.id_buf.as_str());
+                    }
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Name:");
+                    let mut cue_name = cue.get_name();
+                    ui.text_edit_singleline(&mut cue_name);
+                    cue.set_name(cue_name.as_str());
+                });
+            });
+
+            // second row, for things specifc to a type of cue
+            if let Some(mut cue_inspector) = get_cue_inspector(cue) {
+                cue_inspector.draw_tab(ui, &InspectorPanelTabs::Basics);
             }
-            InspectorPanelTabs::TimeLoops => {
-                if let Some(mut cue_inspector) = get_cue_inspector(cue) {
-                    cue_inspector.time_and_loops_fn(ui);
-                }
+        } else {
+            if let Some(mut cue_inspector) = get_cue_inspector(cue) {
+                cue_inspector.draw_tab(ui, &state.inspector_panel.selected_tab);
             }
         }
     });

@@ -18,17 +18,13 @@ use super::CueInspector;
 #[derive(Debug)]
 pub struct AudioCueInspector<'a> {
     pub cue: &'a mut AudioCue,
-    // start_inp_buf: String,
-    // end_inp_buf: String,
 }
 
 impl<'a> AudioCueInspector<'a> {
     pub fn new(cue: &'a mut AudioCue) -> Self {
         Self { cue }
     }
-}
 
-impl CueInspector for AudioCueInspector<'_> {
     fn basics(&mut self, ui: &mut egui::Ui) -> () {
         ui.horizontal(|ui| {
             ui.label("File: ");
@@ -36,11 +32,7 @@ impl CueInspector for AudioCueInspector<'_> {
         });
     }
 
-    fn time_and_loops(&self) -> bool {
-        true
-    }
-
-    fn time_and_loops_fn(&mut self, ui: &mut egui::Ui) -> () {
+    fn time_and_loops(&mut self, ui: &mut egui::Ui) -> () {
         let audio_data = match decode_source(&self.cue, ui) {
             Err(err) => {
                 error!("Could not decode audio for cue {}: {}", self.cue.id, err);
@@ -101,6 +93,24 @@ impl CueInspector for AudioCueInspector<'_> {
                 // .unwrap_or_else(|err| error!("Error drawing audio waveform: {}", err))
             });
         });
+    }
+}
+
+impl CueInspector for AudioCueInspector<'_> {
+    fn has_tab(&self, tab: &super::InspectorPanelTabs) -> bool {
+        match tab {
+            super::InspectorPanelTabs::Basics => true,
+            super::InspectorPanelTabs::TimeLoops => true,
+            _ => false,
+        }
+    }
+
+    fn draw_tab(&mut self, ui: &mut egui::Ui, tab: &super::InspectorPanelTabs) {
+        match tab {
+            super::InspectorPanelTabs::Basics => self.basics(ui),
+            super::InspectorPanelTabs::TimeLoops => self.time_and_loops(ui),
+            _ => {}
+        }
     }
 }
 
@@ -283,10 +293,7 @@ fn draw_waveform_view(
 
     painter.add(egui::Shape::line_segment(
         [
-            Pos2 {
-                x: end_pos,
-                y: top,
-            },
+            Pos2 { x: end_pos, y: top },
             Pos2 {
                 x: end_pos,
                 y: bottom,
@@ -296,10 +303,7 @@ fn draw_waveform_view(
     ));
     painter.rect_filled(
         egui::Rect {
-            min: Pos2 {
-                x: end_pos,
-                y: top,
-            },
+            min: Pos2 { x: end_pos, y: top },
             max: waveform_rect.right_bottom(),
         },
         0.,

@@ -7,16 +7,30 @@ mod audio;
 
 pub use audio::AudioCueInspector;
 
+#[derive(Debug, PartialEq)]
+pub enum InspectorPanelTabs {
+    Basics,
+    TimeLoops,
+    Extra,
+}
+
+impl InspectorPanelTabs {
+    pub const ITER: [(InspectorPanelTabs, &str); 3] = [
+        (InspectorPanelTabs::Basics, "Basics"),
+        (InspectorPanelTabs::TimeLoops, "Time & Loops"),
+        (InspectorPanelTabs::Extra, "Extra"),
+    ];
+}
+
 pub trait CueInspector {
-    // unique because ALL cues will show basics tab
-    fn basics(&mut self, _ui: &mut egui::Ui) -> () {
-        ()
+    fn has_tab(&self, tab: &InspectorPanelTabs) -> bool {
+        match tab {
+            InspectorPanelTabs::Basics => true,
+            _ => false,
+        }
     }
 
-    fn time_and_loops(&self) -> bool {
-        false
-    }
-    fn time_and_loops_fn(&mut self, _ui: &mut egui::Ui) -> () {}
+    fn draw_tab(&mut self, _ui: &mut egui::Ui, _tab: &InspectorPanelTabs) {}
 }
 
 pub fn get_cue_inspector(cue: &mut MultitypeCue) -> Option<Box<dyn CueInspector + '_>> {
@@ -34,18 +48,21 @@ pub struct RemarkCueInspector<'a> {
 
 impl<'a> RemarkCueInspector<'a> {
     fn new(cue: &'a mut RemarkCue) -> Self {
-        Self {
-            cue
-        }
+        Self { cue }
     }
 }
 
 impl CueInspector for RemarkCueInspector<'_> {
-    fn basics(&mut self, ui: &mut egui::Ui) -> () {
-        ui.horizontal(|ui| {
-            ui.label("Notes: ");
-            ui.text_edit_singleline(&mut self.cue.notes);
-        });
+    fn draw_tab(&mut self, ui: &mut egui::Ui, tab: &InspectorPanelTabs) {
+        match tab {
+            InspectorPanelTabs::Basics => {
+                ui.horizontal(|ui| {
+                    ui.label("Notes: ");
+                    ui.text_edit_singleline(&mut self.cue.notes);
+                });
+            }
+            _ => {}
+        };
     }
 }
 
@@ -56,17 +73,20 @@ pub struct BonkCueInspector<'a> {
 
 impl<'a> BonkCueInspector<'a> {
     fn new(cue: &'a mut BonkCue) -> Self {
-        Self {
-            cue
-        }
+        Self { cue }
     }
 }
 
 impl CueInspector for BonkCueInspector<'_> {
-    fn basics(&mut self, ui: &mut egui::Ui) -> () {
-        ui.horizontal(|ui| {
-            ui.label("Bonk count: ");
-            ui.label(self.cue.ctr.to_string());
-        });
+    fn draw_tab(&mut self, ui: &mut egui::Ui, tab: &InspectorPanelTabs) {
+        match tab {
+            InspectorPanelTabs::Basics => {
+                ui.horizontal(|ui| {
+                    ui.label("Bonk count: ");
+                    ui.label(self.cue.ctr.to_string());
+                });
+            }
+            _ => {}
+        };
     }
 }
