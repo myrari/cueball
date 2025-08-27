@@ -64,6 +64,19 @@ impl CueballApp {
     }
 }
 
+#[derive(Debug)]
+struct DebugSettings {
+    disable_continue: bool,
+}
+
+impl Default for DebugSettings {
+    fn default() -> Self {
+        DebugSettings {
+            disable_continue: false,
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct AppState {
     pub project: Project,
@@ -76,6 +89,9 @@ pub struct AppState {
     hovered_cue: Option<usize>,
     #[serde(skip)]
     inspector_panel: InspectorPanel,
+
+    #[serde(skip)]
+    debug_settings: DebugSettings,
 }
 
 impl Default for AppState {
@@ -86,6 +102,7 @@ impl Default for AppState {
             hovered_cue: None,
             dragged_cue: None,
             inspector_panel: InspectorPanel::default(),
+            debug_settings: DebugSettings::default(),
         }
     }
 }
@@ -188,6 +205,7 @@ impl eframe::App for CueballApp {
                             }
                         }
                     }
+
                     // save as the same as save, but reset project path
                     if ui.button("Save As").clicked() {
                         self.set_project_path(None);
@@ -226,6 +244,7 @@ impl eframe::App for CueballApp {
                         ctx.send_viewport_cmd(egui::ViewportCommand::Close);
                     }
                 });
+
                 // cues menu
                 ui.menu_button("Cues", |ui| {
                     if ui.button("Audio").clicked() {
@@ -265,6 +284,15 @@ impl eframe::App for CueballApp {
                         }
                     }
                 });
+
+                // debug settings
+                ui.separator();
+                ui.label("Debug Settings:");
+                ui.toggle_value(
+                    &mut self.state.debug_settings.disable_continue,
+                    "Disable Continue",
+                );
+
                 // project title
                 ui.with_layout(
                     egui::Layout::centered_and_justified(egui::Direction::LeftToRight),
@@ -579,7 +607,12 @@ fn handle_go(state: &mut AppState) {
 
     // immutably get cue for next cue index
     let cue = &state.project.cues.list[cue_index];
-    let next_cue_index = cue_index + cue.next_offset();
+    let next_cue_index = cue_index
+        + if state.debug_settings.disable_continue {
+            0
+        } else {
+            cue.next_offset()
+        };
 
     let cue_mut = &mut state.project.cues.list[cue_index];
 
