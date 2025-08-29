@@ -6,7 +6,7 @@ use std::{
 };
 
 use anyhow::anyhow;
-use egui::{Color32, Id, Pos2, Rect, Sense, Stroke};
+use egui::{Color32, Id, Pos2, Rect, RichText, Sense, Stroke, TextStyle};
 use log::error;
 // use log::error;
 use rodio::{Decoder, Source};
@@ -54,41 +54,25 @@ impl<'a> AudioCueInspector<'a> {
             ui.vertical(|ui| {
                 ui.set_width(total_width * 0.3);
 
-                // position in sink
-                // ui.horizontal(|ui| {
-                //     ui.label("Position: ");
-                //     if let Some(sink) = &self.cue.sink {
-                //         if sink.empty() {
-                //             ui.label("Not playing");
-                //         } else {
-                //             ui.label(sink.get_pos().as_secs_f64().to_string());
-                //             // ui.ctx().request_repaint();
-                //         }
-                //     } else {
-                //         ui.label("Cue not initialized!");
-                //     }
-                // });
-
                 // start and end offsets
-                // ui.horizontal(|ui| {
-                // let resp = ui.add(
-                //     egui::TextEdit::singleline(&mut state.inspector_panel.id_buf)
-                //         .font(TextStyle::Monospace)
-                //         .desired_width(CUE_ID_WIDTH_PX),
-                // );
-                // if resp.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
-                //     cue.set_id(state.inspector_panel.id_buf.as_str());
-                // }
-                // ui.add(egui::Slider::new(&mut self.cue.start, 0.0..=1.0).text("Start"));
-                // ui.add(egui::Slider::new(&mut self.cue.end, 0.0..=1.0).text("End"));
-
-                // ui.label("End: ");
-                // let mut end_tmp = self.cue.end.to_string();
-                // ui.text_edit_singleline(&mut end_tmp);
-                // if let Ok(new) = end_tmp.parse() {
-                //     self.cue.end = new;
-                // }
-                // });
+                if let Some(duration) = self.cue.duration {
+                    ui.horizontal(|ui| {
+                        ui.label("Start time: ");
+                        ui.label(
+                            RichText::new(format!("{:.3}", self.cue.start))
+                                .text_style(TextStyle::Monospace),
+                        );
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("End time: ");
+                        ui.label(
+                            RichText::new(format!("{:.3}", self.cue.start + duration))
+                                .text_style(TextStyle::Monospace),
+                        );
+                    });
+                } else {
+                    ui.label(RichText::new("No audio duration").color(Color32::RED));
+                }
             });
 
             // right column
@@ -167,19 +151,6 @@ fn draw_waveform_view(
         None => (samples.len() as f32) / (2. * audio_data.rate as f32),
     };
 
-    // let len = samples.len();
-
-    // let visible_length_samples = (sample_rate as usize) * 1;
-    // let start_idx = samples_played.saturating_sub(visible_length_samples / 2);
-    // let start_idx = 0;
-    // let end_idx = (start_idx + visible_length_samples).min(len);
-
-    // let displayed_waveform = if start_idx < end_idx && len > 0 {
-    //     &samples[start_idx..end_idx]
-    // } else {
-    //     &[] as &[i16]
-    // };
-
     // only take every nth point
     const N: usize = 128;
     let displayed_waveform: Vec<&i16> = samples.iter().step_by(N).collect();
@@ -237,31 +208,26 @@ fn draw_waveform_view(
     let bottom = waveform_rect.left_bottom().y;
 
     let start_pos = cue.start * horiz_scale + waveform_rect.left_top().x;
+    let end_pos = waveform_rect.right_top().x - cue.end * waveform_rect.width() / sample_len;
 
-    let start_icon_size = 16.;
-    let start_icon_rect = Rect {
-        min: Pos2 {
-            x: start_pos - start_icon_size / 2.,
-            y: top - start_icon_size,
+    painter.add(egui::Shape::line_segment(
+        [
+            Pos2 { x: end_pos, y: top },
+            Pos2 {
+                x: end_pos,
+                y: bottom,
+            },
+        ],
+        Stroke::new(1.5, Color32::BLUE),
+    ));
+    painter.rect_filled(
+        egui::Rect {
+            min: Pos2 { x: end_pos, y: top },
+            max: waveform_rect.right_bottom(),
         },
-        max: Pos2 {
-            x: start_pos + start_icon_size / 2.,
-            y: top + start_icon_size,
-        },
-    };
-
-    let start_icon_resp = ui.put(
-        start_icon_rect,
-        egui::Image::new(egui::include_image!("../../../assets/left-and-right.png"))
-            .sense(Sense::drag()),
+        0.,
+        Color32::from_rgba_unmultiplied(0, 0, 200, 32),
     );
-
-    if start_icon_resp.dragged() {
-        let delta = start_icon_resp.drag_delta().x / horiz_scale;
-        let new_pos = (cue.start + delta).clamp(0., sample_len - cue.end);
-        // cue.start = new_pos;
-        let _ = cue.set_start(new_pos);
-    }
 
     painter.add(egui::Shape::line_segment(
         [
@@ -288,13 +254,35 @@ fn draw_waveform_view(
         Color32::from_rgba_unmultiplied(0, 0, 200, 32),
     );
 
-    let end_pos = waveform_rect.right_top().x - cue.end * waveform_rect.width() / sample_len;
+    let start_icon_size = 16.;
+    let start_icon_rect = Rect {
+        min: Pos2 {
+            x: start_pos - start_icon_size / 2.,
+            y: top,
+        },
+        max: Pos2 {
+            x: start_pos + start_icon_size / 2.,
+            y: top + start_icon_size,
+        },
+    };
+
+    let start_icon_resp = ui.put(
+        start_icon_rect,
+        egui::Image::new(egui::include_image!("../../../assets/left-and-right.png"))
+            .sense(Sense::drag()),
+    );
+
+    if start_icon_resp.dragged() {
+        let delta = start_icon_resp.drag_delta().x / horiz_scale;
+        let new_pos = (cue.start + delta).clamp(0., sample_len - cue.end);
+        let _ = cue.set_start(new_pos);
+    }
 
     let end_icon_size = 16.;
     let end_icon_rect = Rect {
         min: Pos2 {
             x: end_pos - end_icon_size / 2.,
-            y: top - end_icon_size,
+            y: top,
         },
         max: Pos2 {
             x: end_pos + end_icon_size / 2.,
@@ -313,25 +301,6 @@ fn draw_waveform_view(
         let new_pos = (cue.end - delta).clamp(0., sample_len - cue.start);
         let _ = cue.set_end(new_pos);
     }
-
-    painter.add(egui::Shape::line_segment(
-        [
-            Pos2 { x: end_pos, y: top },
-            Pos2 {
-                x: end_pos,
-                y: bottom,
-            },
-        ],
-        Stroke::new(1.5, Color32::BLUE),
-    ));
-    painter.rect_filled(
-        egui::Rect {
-            min: Pos2 { x: end_pos, y: top },
-            max: waveform_rect.right_bottom(),
-        },
-        0.,
-        Color32::from_rgba_unmultiplied(0, 0, 200, 32),
-    );
 
     Ok(())
 }
