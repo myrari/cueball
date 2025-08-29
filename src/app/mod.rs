@@ -109,8 +109,8 @@ impl Default for AppState {
 
 impl AppState {
     fn select_cue(&mut self, new_cue_index: usize) -> Option<&MultitypeCue> {
-        if new_cue_index < self.project.cues.list.len() {
-            let new_cue = &self.project.cues.list[new_cue_index];
+        if new_cue_index < self.project.cues.len() {
+            let new_cue = &self.project.cues[new_cue_index];
             self.selected_cue = Some(new_cue_index);
             self.inspector_panel.id_buf = new_cue.get_id();
             Some(new_cue)
@@ -312,7 +312,7 @@ impl eframe::App for CueballApp {
                             ui.set_height(16.);
 
                             // add buttons for each tab
-                            let cue = &mut self.state.project.cues.list[cue_index];
+                            let cue = &mut self.state.project.cues[cue_index];
                             if let Some(cue_inspector) = get_cue_inspector(cue) {
                                 for (tab, name) in InspectorPanelTabs::ITER {
                                     if cue_inspector.has_tab(&tab) {
@@ -387,7 +387,7 @@ fn save_project(project: &Project) -> Result<PathBuf, anyhow::Error> {
 fn inspector_panel_body(ui: &mut egui::Ui, state: &mut AppState) {
     //let cue = &mut project.cues.list[project.selected_cue.unwrap()];
     let cue = match state.selected_cue {
-        Some(cue_index) => &mut state.project.cues.list[cue_index],
+        Some(cue_index) => &mut state.project.cues[cue_index],
         None => return,
     };
     ui.vertical(|ui| {
@@ -477,8 +477,8 @@ fn cue_list_ui(ui: &mut egui::Ui, state: &mut AppState) {
                     if inp.key_pressed(egui::Key::ArrowUp) && i != 0 {
                         state.select_cue(i - 1);
                     }
-                    if inp.key_pressed(egui::Key::End) && state.project.cues.list.len() != 0 {
-                        state.select_cue(state.project.cues.list.len() - 1);
+                    if inp.key_pressed(egui::Key::End) && state.project.cues.len() != 0 {
+                        state.select_cue(state.project.cues.len() - 1);
                     }
                     if inp.key_pressed(egui::Key::Space) && focus.is_none() {
                         handle_go(state);
@@ -496,10 +496,10 @@ fn cue_list_ui(ui: &mut egui::Ui, state: &mut AppState) {
 
             let mut hovered = false;
             let mut dragged = false;
-            body.rows(18.0, state.project.cues.list.len(), |mut row| {
+            body.rows(18.0, state.project.cues.len(), |mut row| {
                 let i = row.index();
                 let this_selected = Some(i) == state.selected_cue;
-                let cue = &state.project.cues.list[i];
+                let cue = &state.project.cues[i];
                 row.set_selected(this_selected);
 
                 let mut this_clicked = false;
@@ -606,7 +606,7 @@ fn handle_go(state: &mut AppState) {
     };
 
     // immutably get cue for next cue index
-    let cue = &state.project.cues.list[cue_index];
+    let cue = &state.project.cues[cue_index];
     let next_cue_index = cue_index
         + if state.debug_settings.disable_continue {
             0
@@ -614,7 +614,7 @@ fn handle_go(state: &mut AppState) {
             cue.next_offset()
         };
 
-    let cue_mut = &mut state.project.cues.list[cue_index];
+    let cue_mut = &mut state.project.cues[cue_index];
 
     // play current cue
     cue_mut.go();

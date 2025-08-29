@@ -249,12 +249,16 @@ impl Default for Project {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CueList {
-    pub list: Vec<MultitypeCue>,
+    list: Vec<MultitypeCue>,
 }
 
 impl CueList {
     pub fn new() -> Self {
         Self { list: vec![] }
+    }
+
+    pub fn len(&self) -> usize {
+        self.list.len()
     }
 
     pub fn init_cues(&mut self) -> () {
@@ -332,6 +336,20 @@ impl CueList {
     fn id_uniqueness_check(&self, _new_id: &String) -> bool {
         true
     } // FIXME
+}
+
+impl std::ops::Index<usize> for CueList {
+    type Output = MultitypeCue;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.list[index]
+    }
+}
+
+impl std::ops::IndexMut<usize> for CueList {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.list[index]
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
