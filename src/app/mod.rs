@@ -285,19 +285,33 @@ impl eframe::App for CueballApp {
                     }
                 });
 
-                // debug settings
-                ui.separator();
-                ui.label("Debug Settings:");
-                ui.toggle_value(
-                    &mut self.state.debug_settings.disable_continue,
-                    "Disable Continue",
-                );
-
-                // project title
-                ui.with_layout(
-                    egui::Layout::centered_and_justified(egui::Direction::LeftToRight),
-                    |ui| ui.label(RichText::new(self.state.project.name.clone()).strong()),
-                );
+                // ui.with_layout(
+                //     egui::Layout::top_down_justified(egui::Align::Center),
+                //     |ui| ui.label(RichText::new(self.state.project.name.clone()).strong()),
+                // );
+                // ui.horizontal(|ui| {
+                //     ui.label(RichText::new(self.state.project.name.clone()).strong());
+                // });
+                // ui.horizontal(|ui| {
+                //     ui.set_min_width(32.);
+                //     // ui.separator();
+                //     ui.label("Debug Settings:");
+                //     ui.toggle_value(
+                //         &mut self.state.debug_settings.disable_continue,
+                //         "Disable Continue",
+                //     );
+                // });
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::LEFT), |ui| {
+                    ui.toggle_value(
+                        &mut self.state.debug_settings.disable_continue,
+                        "Disable Continue",
+                    );
+                    ui.label("Debug Settings:");
+                    ui.add_sized(
+                        ui.available_size(),
+                        egui::Label::new(RichText::new(self.state.project.name.clone()).strong()),
+                    )
+                });
             });
         });
 
