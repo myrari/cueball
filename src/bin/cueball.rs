@@ -7,7 +7,7 @@ fn main() -> Result<(), anyhow::Error> {
     audio::init()?;
 
     match eframe::run_native(
-        "cueball",
+        "wip-cueball",
         eframe::NativeOptions {
             viewport: egui::ViewportBuilder::default(),
             ..Default::default()
