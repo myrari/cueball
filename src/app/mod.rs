@@ -181,7 +181,7 @@ impl eframe::App for CueballApp {
         // top bar
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             // menu bar
-            egui::menu::bar(ui, |ui| {
+            egui::MenuBar::new().ui(ui, |ui| {
                 // file menu and spacer
                 ui.menu_button("File", |ui| {
                     // theme widget
@@ -505,35 +505,24 @@ fn cue_list_ui(ui: &mut egui::Ui, state: &mut AppState) {
             let mut dragged = false;
             body.rows(18.0, state.project.cues.len(), |mut row| {
                 let i = row.index();
-                let this_selected = Some(i) == state.selected_cue;
                 let cue = &state.project.cues[i];
-                row.set_selected(this_selected);
+                let cue_selected = Some(i) == state.selected_cue;
+                let cue_hovered = Some(i) == state.hovered_cue;
 
-                let mut this_clicked = false;
-                let mut this_dragged = false;
-                let mut this_hovered = false;
+                row.set_selected(cue_selected);
+                row.set_hovered(cue_hovered);
 
                 // cue id
                 row.col(|ui| {
-                    let resp = ui
-                        .label(RichText::new(cue.get_id()).text_style(egui::TextStyle::Monospace));
-                    this_clicked |= resp.clicked();
-                    this_dragged |= resp.dragged();
-                    this_hovered |= resp.contains_pointer();
+                    ui.label(RichText::new(cue.get_id()).text_style(egui::TextStyle::Monospace));
                 });
                 // cue type
                 row.col(|ui| {
-                    let resp = ui.label(cue.type_str_short());
-                    this_clicked |= resp.clicked();
-                    this_dragged |= resp.dragged();
-                    this_hovered |= resp.contains_pointer();
+                    ui.label(cue.type_str_short());
                 });
                 // cue name
                 row.col(|ui| {
-                    let resp = ui.label(cue.get_name());
-                    this_clicked |= resp.clicked();
-                    this_dragged |= resp.dragged();
-                    this_hovered |= resp.contains_pointer();
+                    ui.label(cue.get_name());
                 });
 
                 // times column
@@ -547,6 +536,7 @@ fn cue_list_ui(ui: &mut egui::Ui, state: &mut AppState) {
                             rect,
                             0.,
                             Stroke::new(2., Color32::from_rgb(0, 200, 0)),
+                            egui::StrokeKind::Inside,
                         );
                         if let Some(el) = cue.elapsed() {
                             let el_width = el / len * rect.width();
@@ -572,22 +562,28 @@ fn cue_list_ui(ui: &mut egui::Ui, state: &mut AppState) {
                 });
 
                 let resp = row.response();
-                this_clicked |= resp.clicked();
-                this_dragged |= resp.dragged();
-                this_hovered |= resp.contains_pointer();
+                let r_clicked = resp.clicked();
+                let r_dragged = resp.dragged();
+                let r_hovered = resp.contains_pointer();
 
-                if this_clicked {
-                    if this_selected {
+                if r_clicked {
+                    if cue_selected {
                         state.selected_cue = None;
                     } else {
                         state.select_cue(i);
                     }
                 }
-                if this_dragged {
+                if r_dragged {
                     state.dragged_cue = Some(i);
                     dragged = true;
+
+                    // body.ui_mut().painter().circle_filled(
+                    //     egui::Pos2 { x: 0.0, y: 0.0 },
+                    //     10.0,
+                    //     Color32::WHITE,
+                    // );
                 }
-                if this_hovered {
+                if r_hovered {
                     state.hovered_cue = Some(i);
                     hovered = true;
                 }
