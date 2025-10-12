@@ -77,20 +77,15 @@ impl Default for DebugSettings {
     }
 }
 
-#[derive(Serialize, Deserialize)]
 pub struct AppState {
     pub project: Project,
 
     selected_cue: Option<usize>,
 
-    #[serde(skip)]
     dragged_cue: Option<usize>,
-    #[serde(skip)]
     hovered_cue: Option<usize>,
-    #[serde(skip)]
     inspector_panel: InspectorPanel,
 
-    #[serde(skip)]
     debug_settings: DebugSettings,
 }
 
