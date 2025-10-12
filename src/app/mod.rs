@@ -512,6 +512,22 @@ fn cue_list_ui(ui: &mut egui::Ui, state: &mut AppState) {
                 row.set_selected(cue_selected);
                 row.set_hovered(cue_hovered);
 
+                if let Some(hovered_idx) = state.hovered_cue {
+                    if let Some(dragged_idx) = state.dragged_cue {
+                        if hovered_idx < dragged_idx {
+                            // dragging cue up
+                            if hovered_idx == i {
+                                row.set_overline(true);
+                            }
+                        } else if hovered_idx > dragged_idx {
+                            // dragging cue down
+                            if hovered_idx + 1 == i {
+                                row.set_overline(true);
+                            }
+                        }
+                    }
+                }
+
                 // cue id
                 row.col(|ui| {
                     ui.label(RichText::new(cue.get_id()).text_style(egui::TextStyle::Monospace));
