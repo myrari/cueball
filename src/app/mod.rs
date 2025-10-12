@@ -163,24 +163,22 @@ impl eframe::App for CueballApp {
                 }
 
                 if inp.key_pressed(egui::Key::O) {
-                    if inp.modifiers.ctrl && inp.key_pressed(egui::Key::O) {
-                        match FileDialog::new()
-                            .add_filter("cueball", &["cueball", "cbp"])
-                            .pick_file()
-                        {
-                            None => {
-                                error!("No file path selected!");
+                    match FileDialog::new()
+                        .add_filter("cueball", &["cueball", "cbp"])
+                        .pick_file()
+                    {
+                        None => {
+                            error!("No file path selected!");
+                        }
+                        Some(path) => match open_project(path) {
+                            Ok(new_project) => {
+                                self.state.project = new_project;
                             }
-                            Some(path) => match open_project(path) {
-                                Ok(new_project) => {
-                                    self.state.project = new_project;
-                                }
-                                Err(err) => {
-                                    error!("Failed to open project: {}", err);
-                                }
-                            },
-                        };
-                    }
+                            Err(err) => {
+                                error!("Failed to open project: {}", err);
+                            }
+                        },
+                    };
                 }
             }
         });
