@@ -107,7 +107,6 @@ impl AppState {
         if new_cue_index < self.project.cues.len() {
             let new_cue = &self.project.cues[new_cue_index];
             self.selected_cue = Some(new_cue_index);
-            self.inspector_panel.id_buf = new_cue.get_id();
             Some(new_cue)
         } else {
             None
@@ -118,14 +117,12 @@ impl AppState {
 #[derive(Debug)]
 struct InspectorPanel {
     selected_tab: InspectorPanelTabs,
-    id_buf: String,
 }
 
 impl Default for InspectorPanel {
     fn default() -> Self {
         Self {
             selected_tab: InspectorPanelTabs::Basics,
-            id_buf: String::new(),
         }
     }
 }
@@ -412,20 +409,19 @@ fn inspector_panel_body(ui: &mut egui::Ui, state: &mut AppState) {
                 ui.horizontal(|ui| {
                     ui.set_width(80.);
                     ui.label("ID:");
-                    let resp = ui.add(
-                        egui::TextEdit::singleline(&mut state.inspector_panel.id_buf)
+                    let mut cue_id = cue.get_id();
+                    ui.add(
+                        egui::TextEdit::singleline(&mut cue_id)
                             .font(TextStyle::Monospace)
                             .desired_width(CUE_ID_WIDTH_PX),
                     );
-                    if resp.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
-                        cue.set_id(state.inspector_panel.id_buf.as_str());
-                    }
+                    cue.set_id(&cue_id);
                 });
                 ui.horizontal(|ui| {
                     ui.label("Name:");
                     let mut cue_name = cue.get_name();
                     ui.text_edit_singleline(&mut cue_name);
-                    cue.set_name(cue_name.as_str());
+                    cue.set_name(&cue_name);
                 });
             });
 
@@ -505,7 +501,7 @@ fn cue_list_ui(ui: &mut egui::Ui, state: &mut AppState) {
             let mut dragged = false;
             body.rows(18.0, state.project.cues.len(), |mut row| {
                 let i = row.index();
-                let cue = &state.project.cues[i];
+                let cue = &mut state.project.cues[i];
                 let cue_selected = Some(i) == state.selected_cue;
                 let cue_hovered = Some(i) == state.hovered_cue;
 
@@ -531,7 +527,13 @@ fn cue_list_ui(ui: &mut egui::Ui, state: &mut AppState) {
 
                 // cue id
                 row.col(|ui| {
-                    ui.label(RichText::new(cue.get_id()).text_style(egui::TextStyle::Monospace));
+                    let mut cue_id = cue.get_id();
+                    ui.add(
+                        egui::TextEdit::singleline(&mut cue_id)
+                            .font(TextStyle::Monospace)
+                            .frame(false),
+                    );
+                    cue.set_id(&cue_id);
                 });
                 // cue type
                 row.col(|ui| {
