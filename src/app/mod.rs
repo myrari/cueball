@@ -510,7 +510,6 @@ fn cue_list_ui(ui: &mut egui::Ui, state: &mut AppState) {
                 let cue_hovered = Some(i) == state.hovered_cue;
 
                 row.set_selected(cue_selected);
-                row.set_hovered(cue_hovered);
 
                 if let Some(hovered_idx) = state.hovered_cue {
                     if let Some(dragged_idx) = state.dragged_cue {
@@ -525,6 +524,8 @@ fn cue_list_ui(ui: &mut egui::Ui, state: &mut AppState) {
                                 row.set_overline(true);
                             }
                         }
+                    } else {
+                        row.set_hovered(cue_hovered);
                     }
                 }
 
