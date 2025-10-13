@@ -6,8 +6,9 @@ use std::{
 };
 
 use anyhow::anyhow;
-use egui::{Color32, Id, Pos2, Rect, RichText, Sense, Stroke, TextStyle};
-use log::error;
+use egui::{Color32, Id, Pos2, Rect, RichText, Sense, Stroke, TextEdit, TextStyle};
+use log::{error, warn};
+use rfd::FileDialog;
 // use log::error;
 use rodio::{Decoder, Source};
 
@@ -28,7 +29,16 @@ impl<'a> AudioCueInspector<'a> {
     fn basics(&mut self, ui: &mut egui::Ui) -> () {
         ui.horizontal(|ui| {
             ui.label("File: ");
-            ui.text_edit_singleline(&mut self.cue.file_path);
+            ui.add_enabled(false, TextEdit::singleline(&mut self.cue.file_path));
+            if ui.button("Pick").clicked() {
+                match FileDialog::new().pick_file() {
+                    Some(path) => match path.to_str() {
+                        Some(p) => self.cue.file_path = p.into(),
+                        None => error!("Selected invalid path!"),
+                    },
+                    None => warn!("Did not select an audio file!"),
+                }
+            }
         });
     }
 
