@@ -9,7 +9,6 @@ use anyhow::anyhow;
 use egui::{Color32, Id, Pos2, Rect, RichText, Sense, Stroke, TextEdit, TextStyle};
 use log::{error, warn};
 use rfd::FileDialog;
-// use log::error;
 use rodio::{Decoder, Source};
 
 use crate::cues::AudioCue;
@@ -133,7 +132,7 @@ impl CueInspector for AudioCueInspector<'_> {
 
 #[derive(Debug, Clone)]
 struct AudioData {
-    samples: Arc<Mutex<Vec<i16>>>,
+    samples: Arc<Mutex<Vec<f32>>>,
     rate: u32,
     duration: Option<Duration>,
 }
@@ -163,7 +162,7 @@ fn draw_waveform_view(
 
     // only take every nth point
     const N: usize = 128;
-    let displayed_waveform: Vec<&i16> = samples.iter().step_by(N).collect();
+    let displayed_waveform: Vec<&f32> = samples.iter().step_by(N).collect();
 
     let mut waveform_rect = ui.available_rect_before_wrap();
     waveform_rect.set_width(total_width * 0.7);
@@ -173,7 +172,7 @@ fn draw_waveform_view(
     let horiz_scale = waveform_rect.width() / sample_len;
 
     if !displayed_waveform.is_empty() {
-        let wave_height = waveform_rect.height() / (2. * 100000.);
+        let wave_height = waveform_rect.height() / (2. * 2.);
         let wave_width = waveform_rect.width() / displayed_waveform.len().max(1) as f32;
         let center_y = waveform_rect.center().y;
 
@@ -182,7 +181,7 @@ fn draw_waveform_view(
             .enumerate()
             .map(|(i, sample)| {
                 let x = waveform_rect.left_top().x + (i as f32 * wave_width);
-                let y = center_y - ((**sample as f32) * wave_height);
+                let y = center_y - (**sample * wave_height);
                 Pos2 { x, y }
             })
             .collect();
@@ -316,30 +315,15 @@ fn draw_waveform_view(
 }
 
 fn decode_source(cue: &AudioCue, ui: &mut egui::Ui) -> Result<AudioData, anyhow::Error> {
-    // let audio_buf_id = Id::new(format!("audio_cue_{}_buf", cue.id));
-    // let audio_rate_id = Id::new(format!("audio_cue_{}_rate", cue.id));
-
     let id = Id::new(format!("audio_cue_{}_data", cue.id));
 
-    // let mut buf: Option<Arc<Mutex<Vec<i16>>>> = None;
-    // let mut rate: Option<u32> = None;
     let mut stored: Option<AudioData> = None;
     ui.memory(|mem| {
-        // buf = mem.data.get_temp(audio_buf_id);
-        // rate = mem.data.get_temp(audio_rate_id);
         stored = mem.data.get_temp(id);
     });
-    // if let Some(buf) = buf {
-    //     if let Some(rate) = rate {
-    //         // no need to recalculate!
-    //         return Ok((buf, rate));
-    //     }
-    // }
     if let Some(out) = stored {
         return Ok(out);
     }
-
-    // info!("decoding");
 
     let file = BufReader::new(File::open(cue.file_path.clone())?);
 
@@ -357,8 +341,6 @@ fn decode_source(cue: &AudioCue, ui: &mut egui::Ui) -> Result<AudioData, anyhow:
     };
 
     ui.memory_mut(|mem| {
-        // mem.data.insert_temp(audio_buf_id, out.clone());
-        // mem.data.insert_temp(audio_rate_id, sample_rate);
         mem.data.insert_temp(id, data.clone());
     });
 

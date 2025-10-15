@@ -49,27 +49,30 @@ impl AudioCue {
     fn play_audio(&mut self) -> Result<(), anyhow::Error> {
         if let Some(sink) = &self.sink {
             let file = BufReader::new(File::open(self.file_path.clone())?);
-
             let source = Decoder::new(file)?;
-            let buffer = source.buffered();
 
-            let sample_rate = buffer.sample_rate();
-            let num_samples = buffer.clone().count();
-            let duration =
-                Duration::from_secs_f32((num_samples as f32) / (2. * sample_rate as f32));
+            // manually buffer ourselves because .buffered() was deleting all
+            // the audio data for some reason???
+            let source = rodio::buffer::SamplesBuffer::new(
+                source.channels(),
+                source.sample_rate(),
+                source.collect::<Vec<f32>>(),
+            );
 
             // apply start and end offsets
-            let trimmed_source = buffer
-                .take_duration(duration - Duration::from_secs_f32(self.end))
-                .skip_duration(Duration::from_secs_f32(self.start));
+            let duration = match self.duration {
+                Some(d) => Duration::from_secs_f32(d),
+                None => return Err(anyhow!("Audio cue {} had invalid duration", self.id)),
+            };
+            let start_offset = Duration::from_secs_f32(self.start);
+            let source = source.skip_duration(start_offset).take_duration(duration);
 
-            if !sink.empty() {
-                sink.clear();
-            }
-
+            // set volume
             sink.set_volume(self.volume);
+            // let source = source.amplify_decibel(self.volume);
 
-            sink.append(trimmed_source);
+            sink.clear();
+            sink.append(source);
             sink.play();
 
             Ok(())
@@ -152,9 +155,7 @@ impl Clone for AudioCue {
                     start: self.start,
                     end: self.end,
                     volume: self.volume,
-                    sink: Some(Box::new(
-                        Sink::try_new(&am.handle).expect("Failed to create sink for audio cue"),
-                    )),
+                    sink: Some(Box::new(Sink::connect_new(&am.stream.mixer()))),
                     duration: self.duration,
                 }
             } else {
@@ -187,21 +188,12 @@ impl Debug for AudioCue {
 #[typetag::serde]
 impl Cue for AudioCue {
     fn init(&mut self) -> () {
-        // info!("Init audio cue {}", self.id);
         // initialize the sink for this cue
         if self.sink.is_some() {
             debug!("Audio cue {} already initted!", self.id)
         }
         audio::AUDIO_MANAGER.with_borrow(|am| match am {
-            Some(am) => match Sink::try_new(&am.handle) {
-                Ok(sink) => self.sink = Some(Box::new(sink)),
-                Err(err) => {
-                    error!(
-                        "Could not init audio cue {}, sink creation error: {}",
-                        self.id, err
-                    )
-                }
-            },
+            Some(am) => self.sink = Some(Box::new(Sink::connect_new(&am.stream.mixer()))),
             None => {
                 error!(
                     "Could not init audio cue {}, AudioManager not intialized!",

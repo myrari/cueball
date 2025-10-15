@@ -1,22 +1,21 @@
 use std::cell::RefCell;
 
-use rodio::{OutputStream, OutputStreamHandle};
+use rodio::{OutputStream, OutputStreamBuilder};
 
 thread_local!(
     pub static AUDIO_MANAGER: RefCell<Option<AudioManager>> = RefCell::new(None)
 );
 
 pub fn init() -> Result<(), anyhow::Error> {
-    let (_stream, handle) = OutputStream::try_default()?;
+    let stream = OutputStreamBuilder::open_default_stream()?;
 
     AUDIO_MANAGER.with(|mgr| {
-        mgr.replace(Some(AudioManager { _stream, handle }));
+        mgr.replace(Some(AudioManager { stream }));
     });
 
     Ok(())
 }
 
 pub struct AudioManager {
-    _stream: OutputStream,
-    pub handle: OutputStreamHandle,
+    pub stream: OutputStream,
 }
