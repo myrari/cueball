@@ -497,8 +497,8 @@ fn cue_list_ui(ui: &mut egui::Ui, state: &mut AppState) {
                 }
             });
 
-            let mut hovered = false;
-            let mut dragged = false;
+            let mut hovered_this_frame = false;
+            let mut dragged_this_frame = false;
             body.rows(18.0, state.project.cues.len(), |mut row| {
                 let i = row.index();
                 let cue = &mut state.project.cues[i];
@@ -528,12 +528,17 @@ fn cue_list_ui(ui: &mut egui::Ui, state: &mut AppState) {
                 // cue id
                 row.col(|ui| {
                     let mut cue_id = cue.get_id();
-                    ui.add(
+                    let r = ui.add(
                         egui::TextEdit::singleline(&mut cue_id)
                             .font(TextStyle::Monospace)
-                            .frame(false),
+                            .frame(false)
+                            .desired_width(0.)
+                            .clip_text(false),
                     );
                     cue.set_id(&cue_id);
+                    if cue_selected && ui.input(|i| i.key_pressed(egui::Key::N)) {
+                        r.request_focus();
+                    }
                 });
                 // cue type
                 row.col(|ui| {
@@ -541,7 +546,18 @@ fn cue_list_ui(ui: &mut egui::Ui, state: &mut AppState) {
                 });
                 // cue name
                 row.col(|ui| {
-                    ui.label(cue.get_name());
+                    // let r = ui.label(cue.get_name());
+                    let mut cue_name = cue.get_name();
+                    let r = ui.add(
+                        egui::TextEdit::singleline(&mut cue_name)
+                            .frame(false)
+                            .desired_width(0.)
+                            .clip_text(false),
+                    );
+                    cue.set_name(&cue_name);
+                    if cue_selected && ui.input(|i| i.key_pressed(egui::Key::Q)) {
+                        r.request_focus();
+                    }
                 });
 
                 // times column
@@ -581,37 +597,31 @@ fn cue_list_ui(ui: &mut egui::Ui, state: &mut AppState) {
                 });
 
                 let resp = row.response();
-                let r_clicked = resp.clicked();
-                let r_dragged = resp.dragged();
-                let r_hovered = resp.contains_pointer();
+                let clicked = resp.clicked();
+                let dragged = resp.dragged();
+                let hovered = resp.contains_pointer();
 
-                if r_clicked {
+                if clicked {
                     if cue_selected {
                         state.selected_cue = None;
                     } else {
                         state.select_cue(i);
                     }
                 }
-                if r_dragged {
+                if dragged {
                     state.dragged_cue = Some(i);
-                    dragged = true;
-
-                    // body.ui_mut().painter().circle_filled(
-                    //     egui::Pos2 { x: 0.0, y: 0.0 },
-                    //     10.0,
-                    //     Color32::WHITE,
-                    // );
+                    dragged_this_frame = true;
                 }
-                if r_hovered {
+                if hovered {
                     state.hovered_cue = Some(i);
-                    hovered = true;
+                    hovered_this_frame = true;
                 }
             });
 
-            if !dragged {
+            if !dragged_this_frame {
                 state.dragged_cue = None;
             }
-            if !hovered {
+            if !hovered_this_frame {
                 state.hovered_cue = None;
             }
         });
