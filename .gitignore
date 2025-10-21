@@ -1,1 +1,5 @@
+# builds
 /target
+
+# dev testing files (i.e. testing projects)
+/dev_testing
