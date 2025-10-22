@@ -40,22 +40,32 @@ impl CueballApp {
 
         // persistence
         if let Some(storage) = cc.storage {
-            let mut stored: CueballApp =
+            let stored: CueballApp =
                 eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
             if let Some(ref project_path) = stored.project_path {
                 match open_project(project_path.clone()) {
-                    Ok(new_project) => {
-                        stored.state.project = new_project;
-                    }
+                    Ok(new_project) => Self {
+                        state: AppState {
+                            project: new_project,
+                            ..Default::default()
+                        },
+                        project_path: Some(project_path.clone()),
+                    },
                     Err(err) => {
-                        error!("Failed to open project: {}", err);
+                        error!(
+                            "Failed to open project at {:?}: {}",
+                            project_path.clone(),
+                            err
+                        );
+                        Default::default()
                     }
                 }
+            } else {
+                Default::default()
             }
-            return stored;
+        } else {
+            Default::default()
         }
-
-        Default::default()
     }
 
     fn set_project_path(&mut self, path: Option<PathBuf>) -> () {

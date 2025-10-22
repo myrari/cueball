@@ -7,9 +7,12 @@ fn main() -> Result<(), anyhow::Error> {
     audio::init()?;
 
     match eframe::run_native(
-        "wip-cueball",
+        "cueball",
         eframe::NativeOptions {
-            viewport: egui::ViewportBuilder::default(),
+            viewport: egui::ViewportBuilder {
+                title: Some("wip-cueball".into()),
+                ..Default::default()
+            },
             ..Default::default()
         },
         Box::new(|cc| Ok(Box::new(CueballApp::new(cc)))),
