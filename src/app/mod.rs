@@ -4,8 +4,7 @@ pub use inspector::AudioCueInspector;
 use inspector::{get_cue_inspector, InspectorPanelTabs};
 
 use crate::{
-    cues::{AudioCue, BonkCue, RemarkCue},
-    Cue, MultitypeCue, Project,
+    Cue, MultitypeCue, Project, cues::{AudioCue, BonkCue, GroupCue, RemarkCue}
 };
 
 use anyhow::anyhow;
@@ -247,6 +246,18 @@ impl eframe::App for CueballApp {
 
                 // cues menu
                 ui.menu_button("Cues", |ui| {
+                    if ui.button("Group").clicked() {
+                        if let Ok(i) =
+                            self.state
+                                .project
+                                .cues
+                                .add(MultitypeCue::Group(GroupCue::with_id(
+                                    self.state.project.cues.get_new_cue_id().to_string(),
+                                )))
+                        {
+                            self.state.select_cue(i);
+                        }
+                    }
                     if ui.button("Audio").clicked() {
                         if let Ok(i) =
                             self.state
@@ -285,22 +296,7 @@ impl eframe::App for CueballApp {
                     }
                 });
 
-                // ui.with_layout(
-                //     egui::Layout::top_down_justified(egui::Align::Center),
-                //     |ui| ui.label(RichText::new(self.state.project.name.clone()).strong()),
-                // );
-                // ui.horizontal(|ui| {
-                //     ui.label(RichText::new(self.state.project.name.clone()).strong());
-                // });
-                // ui.horizontal(|ui| {
-                //     ui.set_min_width(32.);
-                //     // ui.separator();
-                //     ui.label("Debug Settings:");
-                //     ui.toggle_value(
-                //         &mut self.state.debug_settings.disable_continue,
-                //         "Disable Continue",
-                //     );
-                // });
+                // debug settings
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::LEFT), |ui| {
                     ui.toggle_value(
                         &mut self.state.debug_settings.disable_continue,

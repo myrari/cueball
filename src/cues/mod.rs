@@ -1,8 +1,10 @@
 mod audio;
 mod cues;
+mod group;
 
 pub use audio::AudioCue;
 pub use cues::{BonkCue, RemarkCue};
+pub use group::GroupCue;
 
 use mlua::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -67,6 +69,7 @@ macro_rules! call_cue_enum_inner_matchblock {
             MultitypeCue::Remark(c) => c.$method($($x,)*),
             MultitypeCue::Bonk(c)   => c.$method($($x,)*),
             MultitypeCue::Audio(c)   => c.$method($($x,)*),
+            MultitypeCue::Group(c)   => c.$method($($x,)*),
         }
     }
 }
@@ -141,6 +144,7 @@ pub enum MultitypeCue {
     Remark(RemarkCue),
     Bonk(BonkCue),
     Audio(AudioCue),
+    Group(GroupCue),
 }
 
 #[typetag::serde]
@@ -247,7 +251,7 @@ impl Default for Project {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct CueList {
     list: Vec<MultitypeCue>,
 }
@@ -336,6 +340,26 @@ impl CueList {
     fn id_uniqueness_check(&self, _new_id: &String) -> bool {
         true
     } // FIXME
+}
+
+impl<'a> IntoIterator for &'a CueList {
+    type Item = &'a MultitypeCue;
+
+    type IntoIter = std::slice::Iter<'a, MultitypeCue>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.list.iter()
+    }
+}
+
+impl<'a> IntoIterator for &'a mut CueList {
+    type Item = &'a mut MultitypeCue;
+
+    type IntoIter = std::slice::IterMut<'a, MultitypeCue>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.list.iter_mut()
+    }
 }
 
 impl std::ops::Index<usize> for CueList {

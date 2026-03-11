@@ -1,5 +1,5 @@
 use crate::{
-    cues::{BonkCue, RemarkCue},
+    cues::{BonkCue, GroupCue, RemarkCue},
     MultitypeCue,
 };
 
@@ -40,6 +40,7 @@ pub fn get_cue_inspector(cue: &mut MultitypeCue) -> Option<Box<dyn CueInspector 
         MultitypeCue::Remark(ref mut q) => Some(Box::new(RemarkCueInspector::new(q))),
         MultitypeCue::Bonk(ref mut q) => Some(Box::new(BonkCueInspector::new(q))),
         MultitypeCue::Audio(ref mut q) => Some(Box::new(AudioCueInspector::new(q))),
+        MultitypeCue::Group(ref mut q) => Some(Box::new(GroupCueInspector::new(q))),
     }
 }
 
@@ -86,6 +87,30 @@ impl CueInspector for BonkCueInspector<'_> {
                 ui.horizontal(|ui| {
                     ui.label("Bonk count: ");
                     ui.label(self.cue.ctr.to_string());
+                });
+            }
+            _ => {}
+        };
+    }
+}
+
+#[derive(Debug)]
+pub struct GroupCueInspector<'a> {
+    pub cue: &'a mut GroupCue,
+}
+
+impl<'a> GroupCueInspector<'a> {
+    fn new(cue: &'a mut GroupCue) -> Self {
+        Self { cue }
+    }
+}
+
+impl CueInspector for GroupCueInspector<'_> {
+    fn draw_tab(&mut self, ui: &mut egui::Ui, tab: &InspectorPanelTabs) {
+        match tab {
+            InspectorPanelTabs::Basics => {
+                ui.horizontal(|ui| {
+                    ui.label("Group cue!");
                 });
             }
             _ => {}
