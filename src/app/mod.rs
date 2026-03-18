@@ -4,7 +4,8 @@ pub use inspector::AudioCueInspector;
 use inspector::{get_cue_inspector, InspectorPanelTabs};
 
 use crate::{
-    Cue, MultitypeCue, Project, cues::{AudioCue, BonkCue, GroupCue, RemarkCue}
+    cues::{AudioCue, BonkCue, GroupCue, RemarkCue},
+    Cue, MultitypeCue, Project,
 };
 
 use anyhow::anyhow;
@@ -147,6 +148,12 @@ impl eframe::App for CueballApp {
         // program-wide keyboard shortcuts
         ctx.input(|inp| {
             if inp.modifiers.command {
+                // control-n for new project
+                if inp.key_pressed(egui::Key::N) {
+                    self.project_path = None;
+                    self.state = AppState::default();
+                }
+
                 // control-s for save(s)
                 if inp.key_pressed(egui::Key::S) {
                     if inp.modifiers.shift {
@@ -192,6 +199,12 @@ impl eframe::App for CueballApp {
                 ui.menu_button("File", |ui| {
                     // theme widget
                     egui::widgets::global_theme_preference_buttons(ui);
+
+                    // new button
+                    if ui.button("New").clicked() {
+                        self.project_path = None;
+                        self.state = AppState::default();
+                    }
 
                     // save & save as buttons
                     if ui.button("Save").clicked() {
