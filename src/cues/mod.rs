@@ -6,6 +6,7 @@ pub use audio::AudioCue;
 pub use cues::{BonkCue, RemarkCue};
 pub use group::GroupCue;
 
+use log::warn;
 use mlua::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::{cmp::max, path::PathBuf};
@@ -271,6 +272,39 @@ impl CueList {
         }
     }
 
+    pub fn go(&mut self, i: usize) -> usize {
+        let len = self.len();
+        let depth = self.get_cue_depth(i);
+        let cue = &mut self[i];
+        match cue {
+            MultitypeCue::Group(gc) => match gc.typ {
+                group::GroupType::Sync => {
+                    let offset = gc.next_offset();
+                    let remaining_cues = len - i - 1;
+                    if gc.len > remaining_cues {
+                        // clamp group length to remaining cues in cue list
+                        gc.len = remaining_cues;
+                    }
+
+                    for j in 0..gc.len {
+                        // ignore offset values for nested cues
+                        // BUT skip over cues in a nested group
+                        if self.get_cue_depth(i + j + 1) == depth + 1 {
+                            let _ = self.go(i + j + 1);
+                        }
+                    }
+
+                    offset
+                }
+            },
+            c => {
+                let offset = c.next_offset();
+                c.go();
+                offset
+            }
+        }
+    }
+
     pub fn add(&mut self, cue: MultitypeCue) -> Result<usize, ()> {
         if self.consistency_checks_add(&cue) {
             let mut new_cue = cue;
@@ -310,11 +344,83 @@ impl CueList {
         None
     }
 
+    pub fn get_cue_depth(&self, i: usize) -> usize {
+        let mut group_lens: Vec<usize> = vec![];
+
+        for j in 0..i {
+            match &self[j] {
+                MultitypeCue::Group(gc) => {
+                    group_lens.push(gc.len);
+                }
+                _ => {}
+            }
+            group_lens = group_lens
+                .iter()
+                .filter_map(|l| if *l < 1 { None } else { Some(l - 1) })
+                .collect();
+        }
+
+        group_lens.len()
+    }
+
+    pub fn get_cue_parent(&self, i: usize) -> Option<usize> {
+        let mut groups: Vec<(usize, usize)> = vec![];
+
+        for j in 0..i {
+            match &self[j] {
+                MultitypeCue::Group(gc) => {
+                    groups.push((j, gc.len));
+                }
+                _ => {}
+            }
+            groups = groups
+                .iter()
+                .filter_map(|(k, l)| if *l < 1 { None } else { Some((*k, l - 1)) })
+                .collect();
+        }
+
+        Some(groups.pop()?.0)
+    }
+
+    pub fn get_all_cue_parents(&self, i: usize) -> Vec<usize> {
+        let mut out: Vec<usize> = vec![];
+
+        let mut cur = i;
+
+        while let Some(p) = self.get_cue_parent(cur) {
+            out.push(p);
+            cur = p;
+        }
+
+        out
+    }
+
     pub fn move_cue(&mut self, mve: usize, to: usize) -> () {
         // move "mve" cue to "to" cue
+
+        for mve_parent in self.get_all_cue_parents(mve) {
+            match &mut self[mve_parent] {
+                MultitypeCue::Group(gc) => gc.len -= 1,
+                _ => warn!("Cue {mve_parent} is a parent but not a group cue!"),
+            }
+        }
+
+        for to_parent in self.get_all_cue_parents(to) {
+            match &mut self[to_parent] {
+                MultitypeCue::Group(gc) => gc.len += 1,
+                _ => warn!("Cue {to_parent} is a parent but not a group cue!"),
+            }
+        }
+
         if mve < to {
-            let len = to - mve;
             // moving down the list
+            let len = to - mve;
+            // extra step for moving down into group cues
+            match &mut self[to] {
+                MultitypeCue::Group(gc) => gc.len += 1,
+                _ => {}
+            }
+
             let slice = &mut self.list[mve..to + 1];
             for i in 0..len {
                 let swap_to = len - i;

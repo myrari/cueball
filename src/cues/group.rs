@@ -1,10 +1,7 @@
-use crate::{
-    cues::{CueRunning, CueTime},
-    CueList,
-};
+use core::fmt;
 
 use super::{add_common_lua_fields, add_common_lua_methods, Cue};
-use log::debug;
+use log::warn;
 use mlua::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -13,22 +10,37 @@ pub enum GroupType {
     Sync,
 }
 
+impl fmt::Display for GroupType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct GroupCue {
     pub id: String,
     pub name: String,
 
     pub typ: GroupType,
-    pub cues: CueList,
+    pub len: usize,
 }
 
 impl GroupCue {
     pub fn with_id(id: impl Into<String>) -> Self {
         Self {
             id: id.into(),
-            name: "New remark cue".to_string(),
+            name: "New group cue".to_string(),
             typ: GroupType::Sync,
-            cues: CueList::new(),
+            len: 0,
+        }
+    }
+
+    pub fn dry_clone(&self) -> Self {
+        GroupCue {
+            id: self.id.clone(),
+            name: self.name.clone(),
+            typ: self.typ.clone(),
+            len: self.len,
         }
     }
 }
@@ -57,76 +69,17 @@ impl Cue for GroupCue {
     }
 
     fn go(&mut self) -> () {
-        debug!("Go Group {}", self.name);
+        // a group cue doesn't do anything by itself on Go
+        warn!(
+            "Group {} was fired, group cues shouldn't be fired directly",
+            self.name
+        );
+    }
 
+    fn next_offset(&self) -> usize {
         match self.typ {
-            GroupType::Sync => {
-                for c in &mut self.cues {
-                    c.go();
-                }
-            }
+            GroupType::Sync => self.len + 1,
         }
-    }
-
-    fn running(&self) -> CueRunning {
-        self.cues
-            .into_iter()
-            .fold(CueRunning::Stopped, |acc, c| match (&acc, c.running()) {
-                (CueRunning::Running, _) => CueRunning::Running,
-                (_, CueRunning::Running) => CueRunning::Running,
-                (CueRunning::Paused, _) => CueRunning::Paused,
-                (_, CueRunning::Paused) => CueRunning::Paused,
-                _ => acc,
-            })
-    }
-
-    fn stop(&mut self) -> () {
-        for c in &mut self.cues {
-            c.stop();
-        }
-    }
-
-    fn set_paused(&mut self, pu: bool) -> () {
-        for c in &mut self.cues {
-            c.set_paused(pu);
-        }
-    }
-
-    fn length(&self) -> Option<CueTime> {
-        match self.typ {
-            GroupType::Sync => {
-                self.cues
-                    .into_iter()
-                    .fold(None, |acc, c| match (&acc, c.length()) {
-                        (_, None) => acc,
-                        (None, Some(t)) => Some(t),
-                        (Some(t1), Some(t2)) => Some(t2.max(*t1)),
-                    })
-            }
-        }
-    }
-
-    fn elapsed(&self) -> Option<CueTime> {
-        match self.typ {
-            GroupType::Sync => {
-                self.cues
-                    .into_iter()
-                    .fold(None, |acc, c| match (&acc, c.elapsed()) {
-                        (_, None) => acc,
-                        (None, Some(t)) => Some(t),
-                        (Some(t1), Some(t2)) => Some(t2.max(*t1)),
-                    })
-            }
-        }
-    }
-
-    fn remaining(&self) -> Option<CueTime> {
-        if let Some(length) = self.length() {
-            if let Some(elapsed) = self.elapsed() {
-                return Some(length - elapsed);
-            }
-        }
-        None
     }
 }
 

@@ -520,6 +520,7 @@ fn cue_list_ui(ui: &mut egui::Ui, state: &mut AppState) {
             let mut dragged_this_frame = false;
             body.rows(18.0, state.project.cues.len(), |mut row| {
                 let i = row.index();
+                let cue_depth = state.project.cues.get_cue_depth(i);
                 let cue = &mut state.project.cues[i];
                 let cue_selected = Some(i) == state.selected_cue;
                 let cue_hovered = Some(i) == state.hovered_cue;
@@ -565,6 +566,11 @@ fn cue_list_ui(ui: &mut egui::Ui, state: &mut AppState) {
                 });
                 // cue name
                 row.col(|ui| {
+                    // add spacing for nested cues
+                    for _ in 0..cue_depth {
+                        const CUE_DEPTH_SPACING: f32 = 8.0;
+                        ui.add_space(CUE_DEPTH_SPACING);
+                    }
                     // let r = ui.label(cue.get_name());
                     let mut cue_name = cue.get_name();
                     let r = ui.add(
@@ -656,19 +662,13 @@ fn handle_go(state: &mut AppState) {
         }
     };
 
-    // immutably get cue for next cue index
-    let cue = &state.project.cues[cue_index];
+    let next_cue_offset = state.project.cues.go(cue_index);
     let next_cue_index = cue_index
         + if state.debug_settings.disable_continue {
             0
         } else {
-            cue.next_offset()
+            next_cue_offset
         };
-
-    let cue_mut = &mut state.project.cues[cue_index];
-
-    // play current cue
-    cue_mut.go();
 
     // advance playhead
     if let None = state.select_cue(next_cue_index) {

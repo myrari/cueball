@@ -110,7 +110,17 @@ impl CueInspector for GroupCueInspector<'_> {
         match tab {
             InspectorPanelTabs::Basics => {
                 ui.horizontal(|ui| {
-                    ui.label("Group cue!");
+                    ui.label("Length: ");
+
+                    let mut cue_len = self.cue.len.to_string();
+                    ui.text_edit_singleline(&mut cue_len);
+                    if let Ok(new_cue_len) = cue_len.parse::<usize>() {
+                        self.cue.len = new_cue_len;
+                    }
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Type: ");
+                    ui.label(self.cue.typ.to_string());
                 });
             }
             _ => {}
